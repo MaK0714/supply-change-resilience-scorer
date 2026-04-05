@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <title>Dynamic Supply Chain Scorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark" id="bodyRoot">
+  <!-- Interactive animated background -->
+  <div class="bg-layer">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+  </div>
+
+  <div class="app-layout">
+    <header class="glass-header">
+      <div class="header-titles">
+        <h1>Resilience Graph Explorer</h1>
+        <p>Food &amp; Agriculture Network · Procedural Topology Engine</p>
+      </div>
+      <div class="header-controls">
+        <button id="themeToggleBtn" class="control-btn theme-btn">
+          <span class="icon">☀️</span><span class="label">Light</span>
+        </button>
+        <div class="score-card glass-panel" id="headerScoreCard">
+          <div class="score-value" id="headerScoreValue">100%</div>
+          <div class="score-label" id="headerScoreLabel">Resilient</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Configuration Builder Bar -->
+    <div class="config-bar glass-panel">
+      <div class="config-title">Network Generator</div>
+      <div class="config-inputs">
+        <div class="input-group">
+          <label>Farms</label>
+          <input type="number" id="inpFarms" value="3" min="1" />
+        </div>
+        <div class="input-group">
+          <label>Processors</label>
+          <input type="number" id="inpProcs" value="3" min="1" />
+        </div>
+        <div class="input-group">
+          <label>Warehouses</label>
+          <input type="number" id="inpWhs" value="2" min="1" />
+        </div>
+        <div class="input-group">
+          <label>Distributors</label>
+          <input type="number" id="inpDists" value="3" min="1" />
+        </div>
+        <div class="input-group">
+          <label>Retailers</label>
+          <input type="number" id="inpRets" value="4" min="1" />
+        </div>
+        <button id="btnGenerate" class="generate-btn">Generate Graph</button>
+      </div>
+    </div>
+
+    <div class="legend-bar glass-panel" id="legendContainer"></div>
+
+    <div class="main-content">
+      <div class="left-panel">
+        <div class="graph-container glass-panel" id="graphContainer">
+          <svg id="networkSvg" width="1000" height="500" class="network-svg">
+            <defs id="svgDefs"></defs>
+            <g id="svgGrid"></g>
+            <g id="svgEdges"></g>
+            <g id="svgNodes"></g>
+          </svg>
+        </div>
+        
+        <div class="charts-panel glass-panel">
+          <div class="tabs-row" id="tabsList">
+            <button class="tab-btn active" data-tab="flow">📊 Node Utilization</button>
+            <button class="tab-btn" data-tab="tier">📈 Tier Metrics</button>
+            <button class="tab-btn" data-tab="gauge">🎯 Gauge Analyzer</button>
+            <span class="tab-hint" id="tabHint"></span>
+          </div>
+          <div class="tab-content" id="tabContent"></div>
+        </div>
+      </div>
+
+      <div class="right-sidebar glass-panel" id="rightSidebar">
+        <div class="sidebar-section metrics-section">
+          <div class="section-title">Network Metrics</div>
+          <div id="metricsList"></div>
+          <div class="score-bar-wrapper">
+            <div class="score-bar-bg">
+              <div class="score-bar-fill" id="scoreBarFill"></div>
+            </div>
+            <div class="score-bar-labels">
+               <span class="score-crit">Critical</span>
+               <span class="score-vuln">Vulnerable</span>
+               <span class="score-resi">Resilient</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="sidebar-section">
+          <div class="section-title">Single Points of Failure (SPOF)</div>
+          <div id="spofList"></div>
+        </div>
+        
+        <div id="selectedNodeContainer"></div>
+
+        <div class="divider"></div>
+
+        <div class="sidebar-section ranking-section">
+          <div class="section-title">Disruption Impact Ranking</div>
+          <div id="rankingList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
