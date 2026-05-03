@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title>Dynamic Supply Chain Scorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+:root {
+    --font-sans: 'Outfit', 'Inter', system-ui, sans-serif;
+    --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+body.light * {
+    scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+body.light *::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Background Gradients */
+body.dark {
+    --bg-color: #030712;
+    --orb-1: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0) 60%);
+    --orb-2: radial-gradient(circle, rgba(147, 51, 234, 0.1) 0%, rgba(147, 51, 234, 0) 60%);
+
+    --glass-bg: rgba(17, 24, 39, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+
+    --surface2: rgba(255, 255, 255, 0.03);
+    --text: #f8fafc;
+    --textMid: #94a3b8;
+    --textFaint: #475569;
+
+    --farmBg: #10b981;
+    --storageBg: #06b6d4;
+    --procBg: #3b82f6;
+    --whBg: #f59e0b;
+    --distBg: #8b5cf6;
+    --retBg: #ef4444;
+}
+
+body.light {
+    --bg-color: #f8fafc;
+    --orb-1: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0) 60%);
+    --orb-2: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0) 60%);
+
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 1);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+
+    --surface2: rgba(0, 0, 0, 0.03);
+    --text: #0f172a;
+    --textMid: #475569;
+    --textFaint: #94a3b8;
+
+    --farmBg: #059669;
+    --storageBg: #0891b2;
+    --procBg: #2563eb;
+    --whBg: #d97706;
+    --distBg: #7c3aed;
+    --retBg: #dc2626;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text);
+    transition: background-color 0.4s ease;
+}
+
+.bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.glow-orb {
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    border-radius: 50%;
+    filter: blur(80px);
+}
+
+.orb-1 {
+    top: -200px;
+    left: -200px;
+    background: var(--orb-1);
+}
+
+.orb-2 {
+    bottom: -200px;
+    right: -200px;
+    background: var(--orb-2);
+}
+
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+.app-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    gap: 16px;
+    padding: 16px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Header */
+.glass-header {
+    border-radius: 16px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+.header-titles h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, #60a5fa, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+body.light .header-titles h1 {
+    background: linear-gradient(90deg, #2563eb, #7c3aed);
+    -webkit-background-clip: text;
+}
+
+.header-titles p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--textMid);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.control-btn {
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 20px;
+    padding: 8px 16px;
+    transition: all 0.2s;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--glass-border);
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+body.light .control-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.score-card {
+    border-radius: 12px;
+    padding: 6px 16px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.score-value {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.score-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Config Bar */
+.config-bar {
+    border-radius: 16px;
+    padding: 16px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 24px;
+}
+
+.config-title {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--textMid);
+}
+
+.config-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--textMid);
+    text-transform: uppercase;
+}
+
+.input-group input {
+    width: 70px;
+    background: var(--surface2);
+    border: 1px solid var(--glass-border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.input-group input:focus {
+    border-color: var(--procBg);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Hide number input spinners */
+.input-group input[type="number"]::-webkit-inner-spin-button,
+.input-group input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.input-group input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.generate-btn {
+    background: linear-gradient(135deg, var(--procBg), var(--distBg));
+    color: white;
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.generate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Legend */
+.legend-bar {
+    border-radius: 12px;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.legend-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* Main Layout */
+.main-content {
+    display: flex;
+    gap: 16px;
+    flex: 1;
+    align-items: stretch;
+}
+
+.left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 16px;
+}
+
+.graph-container {
+    border-radius: 16px;
+    overflow: auto;
+    min-height: 500px;
+    display: flex;
+    justify-content: center;
+}
+
+.network-svg {
+    display: block;
+    user-select: none;
+    margin: 0 auto;
+}
+
+.node-group {
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.node-wrapper:hover .node-group {
+    transform: scale(1.08);
+}
+
+/* Charts Panel */
+.charts-panel {
+    border-radius: 16px;
+}
+
+.tabs-row {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--glass-border);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    background: var(--surface2);
+    color: var(--textMid);
+    border: 1px solid transparent;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: var(--surface2);
+    border-color: var(--glass-border);
+    color: var(--text);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tab-hint {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--textFaint);
+    font-style: italic;
+}
+
+.tab-content {
+    padding: 20px;
+    overflow-x: auto;
+}
+
+/* Right Sidebar */
+.right-sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 32px);
+    position: sticky;
+    top: 16px;
+    overflow-y: auto;
+}
+
+.sidebar-section {
+    padding: 16px 20px;
+    flex-shrink: 0;
+}
+
+.section-title {
+    font-size: 11px;
+    color: var(--textMid);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    font-weight: 800;
+}
+
+.divider {
+    height: 1px;
+    background-color: var(--glass-border);
+    margin: 0;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    border: 1px solid var(--glass-border);
+}
+
+.metric-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.metric-value {
+    font-size: 14px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+}
+
+.score-bar-wrapper {
+    margin-top: 16px;
+}
+
+.score-bar-bg {
+    height: 8px;
+    background-color: var(--surface2);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+.score-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease-out, background 0.5s ease-out;
+}
+
+.score-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+
+.score-bar-labels span {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.score-crit {
+    color: #ef4444;
+}
+
+.score-vuln {
+    color: #f59e0b;
+}
+
+.score-resi {
+    color: #10b981;
+}
+
+.spof-card {
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    transition: transform 0.2s;
+}
+
+.spof-card:hover {
+    transform: scale(1.02);
+}
+
+.spof-card-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f59e0b;
+}
+
+.spof-card-desc {
+    font-size: 11px;
+    color: var(--textMid);
+    margin-top: 2px;
+}
+
+.spof-badge {
+    font-size: 9px;
+    color: #f59e0b;
+    font-weight: 900;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 4px;
+    padding: 2px 6px;
+    letter-spacing: 1px;
+}
+
+.rank-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.rank-item:hover {
+    background-color: var(--surface2);
+}
+
+.rank-no {
+    font-size: 11px;
+    width: 16px;
+    text-align: right;
+    font-weight: 800;
+    font-family: var(--font-mono);
+}
+
+.rank-label {
+    font-size: 13px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.rank-impact {
+    font-size: 11px;
+    font-weight: 800;
+    width: 40px;
+    text-align: right;
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+}
+
+.rank-bar-bg {
+    width: 50px;
+    flex-shrink: 0;
+    height: 6px;
+    background-color: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+.rank-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.selected-node-details {
+    padding: 16px 20px;
+    flex-shrink: 0;
+}
+
+.selected-node-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.selected-node-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.selected-node-stat {
+    background-color: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.selected-node-stat-label {
+    font-size: 10px;
+    color: var(--textFaint);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.selected-node-stat-val {
+    font-size: 18px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+}
+
+.toggle-node-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-node-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Responsive / Mobile Layout */
+@media (max-width: 1100px) {
+    .main-content {
+        flex-direction: column;
+    }
+
+    .right-sidebar {
+        width: 100%;
+        position: static;
+        height: auto;
+        max-height: auto;
+    }
+
+    .selected-node-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .app-layout {
+        padding: 8px;
+        gap: 12px;
+    }
+
+    .glass-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .header-controls {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .config-bar {
+        justify-content: center;
+    }
+
+    .config-inputs {
+        justify-content: center;
+    }
+
+    .legend-bar {
+        justify-content: center;
+    }
+
+    .rank-item {
+        padding: 12px;
+    }
+}
+/* Node Popover Inline Editor */
+#nodePopover {
+    position: absolute;
+    width: 280px;
+    padding: 15px;
+    transition: opacity 0.2s, transform 0.2s;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.95);
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 12px;
+}
+#nodePopover.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+.popover-title {
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: var(--text);
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 8px;
+}
+.popover-section {
+    margin-bottom: 12px;
+}
+.popover-label {
+    font-size: 10px;
+    color: var(--textFaint);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    font-weight: 700;
+}
+.popover-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.popover-input-row input, .popover-input-row select {
+    background: var(--surface2);
+    border: 1px solid var(--glass-border);
+    color: var(--text);
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+    font-weight: 600;
+}
+.popover-input-row input:focus, .popover-input-row select:focus {
+    border-color: var(--procBg);
+}
+.popover-input-row span {
+    font-size: 11px;
+    color: var(--textMid);
+    width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+.popover-btn {
+    background: var(--procBg);
+    color: #fff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    transition: background 0.2s;
+}
+.popover-btn:hover {
+    background: var(--distBg);
+}
+
+    </style>
+<style media="print">
+@page { size: A3 landscape; margin: 12mm; }
+body { background: white !important; color: #0f172a !important; }
+.config-bar, .legend-bar, #themeToggleBtn, #btnGenerate, #btnAddNode,
+#btnExport, #btnPdf, label[for="inpJson"], #inpJson, .tabs-row,
+.bg-layer, .glow-orb, #selNodeType { display: none !important; }
+.app-layout { padding: 0; gap: 8px; max-width: 100%; }
+.glass-header { border-radius: 8px; border: 1px solid #e2e8f0 !important; box-shadow: none !important; background: white !important; backdrop-filter: none !important; }
+.header-titles h1 { background: linear-gradient(90deg,#2563eb,#7c3aed); -webkit-background-clip: text; }
+.main-content { display: flex !important; flex-direction: row !important; gap: 8px; page-break-inside: avoid; }
+.left-panel { flex: 1; min-width: 0; }
+.right-sidebar { width: 260px !important; height: auto !important; position: static !important; overflow: visible !important; border: 1px solid #e2e8f0 !important; box-shadow: none !important; background: white !important; backdrop-filter: none !important; }
+.graph-container { overflow: visible !important; border: 1px solid #e2e8f0 !important; box-shadow: none !important; background: white !important; backdrop-filter: none !important; }
+.charts-panel { border: 1px solid #e2e8f0 !important; box-shadow: none !important; background: white !important; backdrop-filter: none !important; }
+.tab-content { padding: 12px; }
+.metric-row { border: 1px solid #e2e8f0 !important; background: #f8fafc !important; }
+.score-bar-bg { border: 1px solid #e2e8f0 !important; background: #f1f5f9 !important; }
+#nodePopover { display: none !important; }
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+</style>
+</head>
+<body class="dark" id="bodyRoot">
+    <div class="bg-layer"><div class="glow-orb orb-1"></div><div class="glow-orb orb-2"></div></div>
+    <div class="app-layout">
+        <header class="glass-header">
+            <div class="header-titles"><h1>Resilience Graph Explorer</h1><p>Food &amp; Agriculture Network · Procedural Topology Engine</p></div>
+            <div class="header-controls">
+                <button id="themeToggleBtn" class="control-btn theme-btn"><span class="icon">☀️</span><span class="label">Light</span></button>
+                <div class="score-card glass-panel" id="headerScoreCard"><div class="score-value" id="headerScoreValue">100%</div><div class="score-label" id="headerScoreLabel">Resilient</div></div>
+            </div>
+        </header>
+        <div class="config-bar glass-panel">
+            <div class="config-title">Network Generator</div>
+            <div class="config-inputs">
+                <div class="input-group"><label>Farms</label><input type="number" id="inpFarms" value="3" min="1" /></div>
+                <div class="input-group"><label>Processors</label><input type="number" id="inpProcs" value="3" min="1" /></div>
+                <div class="input-group"><label>Storage</label><input type="number" id="inpStorage" value="2" min="1" /></div>
+                <div class="input-group"><label>Warehouses</label><input type="number" id="inpWhs" value="2" min="1" /></div>
+                <div class="input-group"><label>Distributors</label><input type="number" id="inpDists" value="3" min="1" /></div>
+                <div class="input-group"><label>Retailers</label><input type="number" id="inpRets" value="4" min="1" /></div>
+                <div class="input-group" style="margin-left:10px;border-left:1px solid var(--glass-border,rgba(255,255,255,0.2));padding-left:10px;">
+                    <label>Add Node</label>
+                    <select id="selNodeType" style="background:var(--glass-bg,rgba(255,255,255,0.1));color:inherit;border:1px solid var(--glass-border,rgba(255,255,255,0.2));padding:4px;border-radius:4px;outline:none;">
+                        <option value="farm" style="color:black;">Farm</option><option value="processor" style="color:black;">Processor</option>
+                        <option value="storage" style="color:black;">Storage</option><option value="warehouse" style="color:black;">Warehouse</option>
+                        <option value="distributor" style="color:black;">Distributor</option><option value="retailer" style="color:black;">Retailer</option>
+                    </select>
+                    <button id="btnAddNode" class="generate-btn" style="padding:4px 10px;margin-top:4px;width:100%;">Add Node</button>
+                </div>
+                <button id="btnGenerate" class="generate-btn">Generate Graph</button>
+                <label for="inpJson" class="generate-btn" style="background:var(--glass-bg,rgba(255,255,255,0.1));cursor:pointer;text-align:center;border:1px solid var(--glass-border,rgba(255,255,255,0.2));color:inherit;">Upload JSON</label>
+                <input type="file" id="inpJson" accept=".json" style="display:none;" />
+                <button id="btnExport" class="generate-btn" style="background:var(--glass-bg,rgba(255,255,255,0.1));color:inherit;border:1px solid var(--glass-border,rgba(255,255,255,0.2));">Export JSON</button>
+                <button id="btnPdf" class="generate-btn" style="background:linear-gradient(135deg,#ef4444,#b91c1c);">Download PDF</button>
+            </div>
+        </div>
+        <div class="legend-bar glass-panel" id="legendContainer"></div>
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="graph-container glass-panel" id="graphContainer" style="position:relative;">
+                    <svg id="networkSvg" width="1240" height="500" class="network-svg">
+                        <defs id="svgDefs"></defs><g id="svgGrid"></g><g id="svgEdges"></g><g id="svgNodes"></g><g id="svgDragLayer" style="pointer-events:none;"></g>
+                    </svg>
+                    <div id="nodePopover" class="glass-panel hidden" style="position:absolute;z-index:1000;pointer-events:auto;"></div>
+                </div>
+                <div class="charts-panel glass-panel">
+                    <div class="tabs-row" id="tabsList">
+                        <button class="tab-btn active" data-tab="flow">📊 Node Utilization</button>
+                        <button class="tab-btn" data-tab="tier">📈 Tier Metrics</button>
+                        <button class="tab-btn" data-tab="gauge">🎯 Gauge Analyzer</button>
+                        <span class="tab-hint" id="tabHint"></span>
+                    </div>
+                    <div class="tab-content" id="tabContent"></div>
+                </div>
+            </div>
+            <div class="right-sidebar glass-panel" id="rightSidebar">
+                <div class="sidebar-section metrics-section">
+                    <div class="section-title">Network Metrics</div>
+                    <div id="metricsList"></div>
+                    <div class="score-bar-wrapper">
+                        <div class="score-bar-bg"><div class="score-bar-fill" id="scoreBarFill"></div></div>
+                        <div class="score-bar-labels"><span class="score-crit">Critical</span><span class="score-vuln">Vulnerable</span><span class="score-resi">Resilient</span></div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div class="sidebar-section"><div class="section-title">Single Points of Failure (SPOF)</div><div id="spofList"></div></div>
+                <div id="selectedNodeContainer"></div>
+                <div class="divider"></div>
+                <div class="sidebar-section ranking-section"><div class="section-title">Disruption Impact Ranking</div><div id="rankingList"></div></div>
+            </div>
+        </div>
+    </div>
+    <script>
+let STATE = {
+    nodes: [],
+    edges: [],
+    disrupted: new Set(),
+    hovered: null,
+    selected: null,
+    chartTab: 'flow',
+    dark: true,
+    baselineTotal: 0,
+    current: { totalFlow: 0, edgeFlowMap: new Map() },
+    aps: new Set(),
+    spofs: new Set(),
+    ranking: [],
+    tiers: new Map(),
+    inFlow: new Map(),
+    outFlow: new Map()
+};
+
+let NODE_POS = {};
+let SVG_HEIGHT = 500;
+let SVG_WIDTH = 1240;
+
+const COL = { farm: 120, proc: 320, storage: 520, wh: 720, dist: 920, ret: 1120 };
+
+const TYPE_META = {
+    farm: { dark: "#10b981", light: "#059669", darkBg: "#022c22", lightBg: "#d1fae5" },
+    processor: { dark: "#3b82f6", light: "#2563eb", darkBg: "#0c1a3a", lightBg: "#dbeafe" },
+    storage: { dark: "#06b6d4", light: "#0891b2", darkBg: "#083344", lightBg: "#cffafe" },
+    warehouse: { dark: "#f59e0b", light: "#d97706", darkBg: "#2c1700", lightBg: "#fef3c7" },
+    distributor: { dark: "#8b5cf6", light: "#7c3aed", darkBg: "#1e0a30", lightBg: "#ede9fe" },
+    retailer: { dark: "#ef4444", light: "#dc2626", darkBg: "#2d0808", lightBg: "#fee2e2" },
+};
+const TYPE_LABEL = {
+    farm: "Farm", processor: "Processor", storage: "Storage", warehouse: "Warehouse",
+    distributor: "Distributor", retailer: "Retailer",
+};
+
+const SOURCE_TYPES = new Set(["farm"]);
+const NR = 32; // node radius
+
+// ─── Network Generator ────────────────────────────────────────────────────────
+
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function generateNetwork() {
+    const nf = parseInt($('inpFarms').value) || 1;
+    const np = parseInt($('inpProcs').value) || 1;
+    const ns = parseInt($('inpStorage')?.value) || 1;
+    const nw = parseInt($('inpWhs').value) || 1;
+    const nd = parseInt($('inpDists').value) || 1;
+    const nr = parseInt($('inpRets').value) || 1;
+
+    STATE.nodes = [];
+    STATE.edges = [];
+    STATE.disrupted.clear();
+    STATE.selected = null;
+    NODE_POS = {};
+
+    const layers = [
+        { type: 'farm', count: nf, cap: [80, 150], label: "Farm" },
+        { type: 'processor', count: np, cap: [100, 200], label: "Processor" },
+        { type: 'storage', count: ns, cap: [150, 250], label: "Storage" },
+        { type: 'warehouse', count: nw, cap: [150, 250], label: "Warehouse" },
+        { type: 'distributor', count: nd, cap: [100, 180], label: "Distributor" },
+        { type: 'retailer', count: nr, cap: [50, 100], label: "Retailer" }
+    ];
+
+    const maxNodes = Math.max(nf, np, ns, nw, nd, nr);
+    const Y_GAP = 130;
+    SVG_HEIGHT = Math.max(500, maxNodes * Y_GAP + 100);
+
+    // Generate Nodes & Coordinates
+    const layerIds = [];
+    layers.forEach((layer) => {
+        let ids = [];
+        const startY = (SVG_HEIGHT - (layer.count - 1) * Y_GAP) / 2;
+        for (let i = 0; i < layer.count; i++) {
+            const id = `${layer.type}${i + 1}`;
+            ids.push(id);
+            STATE.nodes.push({ id, label: `${layer.label} ${i + 1}`, type: layer.type, capacity: randInt(layer.cap[0], layer.cap[1]) });
+            let xPos = COL.farm;
+            if (layer.type === 'processor') xPos = COL.proc;
+            else if (layer.type === 'storage') xPos = COL.storage;
+            else if (layer.type === 'warehouse') xPos = COL.wh;
+            else if (layer.type === 'distributor') xPos = COL.dist;
+            else if (layer.type === 'retailer') xPos = COL.ret;
+            
+            NODE_POS[id] = { x: xPos, y: startY + i * Y_GAP };
+        }
+        layerIds.push(ids);
+    });
+
+    // Generate Edges ensuring full connectivity logic
+    for (let l = 0; l < layerIds.length - 1; l++) {
+        const fromL = layerIds[l];
+        const toL = layerIds[l + 1];
+
+        const addEdge = (f, t) => {
+            const existing = STATE.edges.find(e => e.from === f && e.to === t);
+            if (existing) {
+                existing.flow = Math.min(existing.flow + randInt(10, 40), 120); // merge, cap at 120
+            } else {
+                STATE.edges.push({ from: f, to: t, flow: randInt(20, 80) });
+            }
+        };
+
+        // Guarantee every downstream node has at least one incoming edge
+        toL.forEach(t => addEdge(fromL[randInt(0, fromL.length - 1)], t));
+
+        // Guarantee every upstream node has at least one outgoing edge
+        fromL.forEach(f => {
+            if (!STATE.edges.find(e => e.from === f)) {
+                addEdge(f, toL[randInt(0, toL.length - 1)]);
+            }
+            // Randomly add cross-connections for redundancy
+            if (toL.length > 1 && Math.random() > 0.5) {
+                addEdge(f, toL[randInt(0, toL.length - 1)]);
+            }
+        });
+    }
+
+    dedupeEdges();
+    const base = runMaxFlow(new Set());
+    STATE.baselineTotal = base.totalFlow;
+    kahnTiers();
+    updateState();
+}
+
+function loadNetworkFromJson(rawData) {
+    let data = rawData;
+    
+    // If it's an array, look for the first object containing nodes and edges
+    if (Array.isArray(rawData)) {
+        data = rawData.find(d => d.nodes && d.edges) || rawData[0] || {};
+    }
+    
+    // If nodes/edges are nested inside another key (like data.Network.nodes)
+    if (!data.nodes && !data.edges) {
+        for (const key in data) {
+            if (data[key] && data[key].nodes && data[key].edges) {
+                data = data[key];
+                break;
+            }
+        }
+    }
+
+    if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+        throw new Error("JSON must contain 'nodes' and 'edges' arrays");
+    }
+
+    STATE.nodes = [];
+    STATE.edges = [];
+    STATE.disrupted.clear();
+    STATE.selected = null;
+    NODE_POS = {};
+
+    const typeCounts = { farm: 0, processor: 0, storage: 0, warehouse: 0, distributor: 0, retailer: 0 };
+    
+    // Process nodes, ensuring all parameters are handled properly
+    data.nodes.forEach(n => {
+        let type = (n.type || 'farm').toString().toLowerCase();
+        
+        // Map common aliases or fallback to farm if the type is completely unknown
+        if (type === 'supplier' || type === 'manufacturer') type = 'farm';
+        else if (type === 'store' || type === 'shop') type = 'retailer';
+        else if (type === 'wearhouse') type = 'warehouse';
+        else if (!TYPE_META[type]) type = 'farm';
+
+        // Check for aliases like capacity_tonnes_day or name
+        const rawCapacity = n.capacity !== undefined ? n.capacity : (n.capacity_tonnes_day !== undefined ? n.capacity_tonnes_day : 100);
+        const capacity = Number(rawCapacity) || 100;
+        
+        const id = (n.id !== undefined ? n.id : `${type}_${Math.random().toString(36).substr(2, 5)}`).toString();
+        const label = (n.label || n.name || id).toString();
+        
+        STATE.nodes.push({ id, label, type, capacity });
+        
+        if (typeCounts[type] !== undefined) typeCounts[type]++;
+    });
+
+    // Process edges
+    data.edges.forEach(e => {
+        if (!e.from || !e.to) return;
+        STATE.edges.push({
+            from: e.from.toString(),
+            to: e.to.toString(),
+            flow: Number(e.flow) || 50
+        });
+    });
+
+    const maxNodes = Math.max(1, ...Object.values(typeCounts));
+    const Y_GAP = 130;
+    SVG_HEIGHT = Math.max(500, maxNodes * Y_GAP + 100);
+
+    const typeCurrentIdx = { farm: 0, processor: 0, storage: 0, warehouse: 0, distributor: 0, retailer: 0 };
+
+    STATE.nodes.forEach(n => {
+        // Find original JSON node to see if pos is defined
+        const orig = data.nodes.find(o => o.id === n.id);
+        const nx = orig ? Number(orig.x) : NaN;
+        const ny = orig ? Number(orig.y) : NaN;
+        if (orig && !isNaN(nx) && !isNaN(ny) && nx > 0 && ny > 0) {
+            NODE_POS[n.id] = { x: nx, y: ny };
+        } else {
+            const count = typeCounts[n.type] || 1;
+            const startY = (SVG_HEIGHT - (count - 1) * Y_GAP) / 2;
+            const idx = typeCurrentIdx[n.type] || 0;
+            typeCurrentIdx[n.type] = idx + 1;
+            
+            let xPos = COL.farm;
+            if (n.type === 'processor') xPos = COL.proc;
+            else if (n.type === 'storage') xPos = COL.storage;
+            else if (n.type === 'warehouse') xPos = COL.wh;
+            else if (n.type === 'distributor') xPos = COL.dist;
+            else if (n.type === 'retailer') xPos = COL.ret;
+            
+            NODE_POS[n.id] = { x: xPos, y: startY + idx * Y_GAP };
+        }
+    });
+
+    dedupeEdges();
+    const base = runMaxFlow(new Set());
+    STATE.baselineTotal = base.totalFlow;
+    kahnTiers();
+    updateState();
+
+    // Update input boxes to reflect loaded file
+    if ($('inpFarms')) $('inpFarms').value = typeCounts.farm;
+    if ($('inpProcs')) $('inpProcs').value = typeCounts.processor;
+    if ($('inpStorage')) $('inpStorage').value = typeCounts.storage;
+    if ($('inpWhs')) $('inpWhs').value = typeCounts.warehouse;
+    if ($('inpDists')) $('inpDists').value = typeCounts.distributor;
+    if ($('inpRets')) $('inpRets').value = typeCounts.retailer;
+}
+
+// Merge any duplicate from→to edge pairs by summing their flow values.
+// This prevents the flow graph from having parallel edges that confuse extraction.
+function dedupeEdges() {
+    const map = new Map();
+    for (const e of STATE.edges) {
+        const k = `${e.from}__${e.to}`;
+        map.set(k, (map.get(k) || 0) + e.flow);
+    }
+    STATE.edges = [];
+    for (const [k, flow] of map) {
+        const [from, to] = k.split('__');
+        STATE.edges.push({ from, to, flow });
+    }
+}
+
+// ─── DSA ──────────────────────────────────────────────────────────────────────
+
+class MaxFlowGraph {
+    constructor(n) { this.g = Array.from({ length: n }, () => []); }
+    addEdge(u, v, cap) {
+        this.g[u].push({ to: v, cap, rev: this.g[v].length });
+        this.g[v].push({ to: u, cap: 0, rev: this.g[u].length - 1 });
+    }
+    bfs(s, t, par, pe) {
+        const vis = new Uint8Array(this.g.length), q = [s]; vis[s] = 1; par[s] = -1;
+        while (q.length) {
+            const u = q.shift();
+            for (let i = 0; i < this.g[u].length; i++) {
+                const e = this.g[u][i];
+                if (!vis[e.to] && e.cap > 0) { vis[e.to] = 1; par[e.to] = u; pe[e.to] = i; if (e.to === t) return true; q.push(e.to); }
+            }
+        }
+        return false;
+    }
+    maxflow(s, t) {
+        const init = this.g.map(adj => adj.map(e => e.cap));
+        const par = new Array(this.g.length).fill(-1), pe = [...par]; let total = 0;
+        while (this.bfs(s, t, par, pe)) {
+            let pf = Infinity, cur = t;
+            while (cur !== s) { const p = par[cur], i = pe[cur]; pf = Math.min(pf, this.g[p][i].cap); cur = p; }
+            cur = t;
+            while (cur !== s) { const p = par[cur], i = pe[cur]; this.g[p][i].cap -= pf; this.g[cur][this.g[p][i].rev].cap += pf; cur = p; }
+            total += pf;
+        }
+        const efMap = new Map();
+        for (let u = 0; u < this.g.length; u++) {
+            for (let i = 0; i < this.g[u].length; i++) {
+                const e = this.g[u][i], sent = init[u][i] - e.cap;
+                if (sent > 0) efMap.set(`${u}__${e.to}`, (efMap.get(`${u}__${e.to}`) || 0) + sent);
+            }
+        }
+        return { flow: total, efMap };
+    }
+}
+
+function runMaxFlow(disrupted) {
+    const ae = STATE.edges.filter(e => !disrupted.has(e.from) && !disrupted.has(e.to));
+    const an = STATE.nodes.filter(n => !disrupted.has(n.id));
+    if (an.length === 0) return { totalFlow: 0, edgeFlowMap: new Map() };
+    const ni = new Map(); an.forEach((n, i) => ni.set(n.id, i));
+
+    // Vertex Splitting: node i → 2*i (in-node) and 2*i+1 (out-node)
+    const S = 2 * an.length, T = S + 1;
+    const g = new MaxFlowGraph(T + 1);
+
+    // Internal node capacity edges: in → out
+    an.forEach((n, i) => g.addEdge(2 * i, 2 * i + 1, n.capacity));
+
+    // Super-source → farms, retailers → super-sink (infinite capacity)
+    for (const f of an.filter(n => SOURCE_TYPES.has(n.type)))
+        g.addEdge(S, 2 * ni.get(f.id), 1e9);
+    for (const r of an.filter(n => n.type === 'retailer'))
+        g.addEdge(2 * ni.get(r.id) + 1, T, 1e9);
+
+    // Aggregate parallel edges (same from→to) into a single capacity
+    // so the flow graph has exactly one edge per unique pair.
+    const edgeCap = new Map(); // key: "fromIdx__toIdx" → total capacity
+    for (const e of ae) {
+        const u = ni.get(e.from), v = ni.get(e.to);
+        if (u === undefined || v === undefined) continue;
+        const k = `${u}__${v}`;
+        edgeCap.set(k, (edgeCap.get(k) || 0) + e.flow);
+    }
+    for (const [k, cap] of edgeCap) {
+        const [u, v] = k.split('__').map(Number);
+        g.addEdge(2 * u + 1, 2 * v, cap); // out-node → in-node
+    }
+
+    const { flow, efMap } = g.maxflow(S, T);
+    const edgeFlowMap = new Map();
+
+    for (const [key, f] of efMap) {
+        const [u, v] = key.split('__').map(Number);
+        // Skip super-source / super-sink edges and internal node edges
+        if (u === S || v === T || u === T || v === S) continue;
+        if (u % 2 !== 1 || v % 2 !== 0) continue; // only out→in cross edges
+
+        const fromNode = an[Math.floor(u / 2)];
+        const toNode   = an[Math.floor(v / 2)];
+        if (!fromNode || !toNode) continue;
+
+        const fromId = fromNode.id, toId = toNode.id;
+        // Distribute the aggregated flow proportionally back to individual edges.
+        // For display purposes: if there are parallel edges, each shows its
+        // share proportional to its declared flow capacity.
+        const parallels = ae.filter(e => e.from === fromId && e.to === toId);
+        const totalCap = parallels.reduce((s, e) => s + e.flow, 0);
+        if (parallels.length === 1 || totalCap === 0) {
+            edgeFlowMap.set(`${fromId}__${toId}`, f);
+        } else {
+            // Split flow proportionally; each parallel edge gets its share
+            parallels.forEach(e => {
+                const share = Math.round(f * (e.flow / totalCap));
+                if (share > 0) edgeFlowMap.set(`${fromId}__${toId}`, (edgeFlowMap.get(`${fromId}__${toId}`) || 0) + share);
+            });
+        }
+    }
+    return { totalFlow: flow, edgeFlowMap };
+}
+
+function tarjanAP(disrupted) {
+    const active = STATE.nodes.filter(n => !disrupted.has(n.id)).map(n => n.id);
+    const idx = new Map(); active.forEach((id, i) => idx.set(id, i));
+    const n = active.length, adj = Array.from({ length: n }, () => []);
+    for (const e of STATE.edges) { const u = idx.get(e.from), v = idx.get(e.to); if (u !== undefined && v !== undefined) { adj[u].push(v); adj[v].push(u); } }
+    const disc = new Array(n).fill(-1), low = new Array(n).fill(0), isAP = new Array(n).fill(false); let t = 0;
+    function dfs(u, p) {
+        disc[u] = low[u] = t++; let cc = 0;
+        for (const v of adj[u]) {
+            if (disc[v] === -1) { cc++; dfs(v, u); low[u] = Math.min(low[u], low[v]); if (p === -1 && cc > 1) isAP[u] = true; if (p !== -1 && low[v] >= disc[u]) isAP[u] = true; }
+            else if (v !== p) low[u] = Math.min(low[u], disc[v]);
+        }
+    }
+    for (let i = 0; i < n; i++) if (disc[i] === -1) dfs(i, -1);
+    const r = new Set(); isAP.forEach((ap, i) => { if (ap) r.add(active[i]); });
+    return r;
+}
+
+function bfsReach(start, targets, disrupted) {
+    if (disrupted.has(start)) return false;
+    const adj = new Map();
+    for (const e of STATE.edges) if (!disrupted.has(e.from) && !disrupted.has(e.to)) { if (!adj.has(e.from)) adj.set(e.from, []); adj.get(e.from).push(e.to); }
+    const vis = new Set(), q = [start];
+    while (q.length) { const c = q.shift(); if (targets.has(c)) return true; if (vis.has(c)) continue; vis.add(c); for (const nb of adj.get(c) || []) if (!vis.has(nb)) q.push(nb); }
+    return false;
+}
+
+// Single-pass analysis: runs MaxFlow once per active node to compute both
+// SPOF membership and disruption-impact ranking, halving the number of MaxFlow calls.
+function analyzeNetwork(disrupted, baseFlow, aps) {
+    const spofs = new Set();
+    if (baseFlow === 0) return { spofs, ranking: [] };
+
+    const activeNodes = STATE.nodes.filter(n => !disrupted.has(n.id));
+    const ranking = activeNodes.map(node => {
+        const td = new Set(disrupted); td.add(node.id);
+        const { totalFlow } = runMaxFlow(td);
+        const loss = baseFlow - totalFlow;
+        if (totalFlow === 0) spofs.add(node.id);
+        const impactPct = baseFlow > 0 ? Math.max(0, Math.min(100, Math.round((loss / baseFlow) * 100))) : 0;
+        return { id: node.id, label: node.label, type: node.type, impactPct, flowLoss: loss, isSPOF: false, isAP: aps.has(node.id) };
+    });
+
+    // Tag isSPOF now that we know the set
+    ranking.forEach(r => { r.isSPOF = spofs.has(r.id); });
+    ranking.sort((a, b) => b.impactPct - a.impactPct || b.flowLoss - a.flowLoss);
+
+    return { spofs, ranking };
+}
+
+// Keep old names as thin wrappers so nothing else breaks
+function detectSPOFs(disrupted, baseFlow) {
+    return analyzeNetwork(disrupted, baseFlow, STATE.aps || new Set()).spofs;
+}
+
+function computeRanking(disrupted, baseFlow, spofs, aps) {
+    return STATE.nodes
+        .filter(n => !disrupted.has(n.id))
+        .map(node => {
+            const td = new Set(disrupted); td.add(node.id);
+            const { totalFlow } = runMaxFlow(td);
+            const loss = baseFlow - totalFlow;
+            const impactPct = baseFlow > 0 ? Math.max(0, Math.min(100, Math.round((loss / baseFlow) * 100))) : 0;
+            return { id: node.id, label: node.label, type: node.type, impactPct, flowLoss: loss, isSPOF: spofs.has(node.id), isAP: aps.has(node.id) };
+        })
+        .sort((a, b) => b.impactPct - a.impactPct || b.flowLoss - a.flowLoss);
+}
+
+function kahnTiers() {
+    // Kahn's topological sort with cycle protection.
+    // Nodes in cycles get a tier derived from their type order so the graph stays stable.
+    const TYPE_ORDER = { farm: 0, processor: 1, storage: 2, warehouse: 3, distributor: 4, retailer: 5 };
+    const inDeg = new Map(), adj = new Map();
+    for (const n of STATE.nodes) { inDeg.set(n.id, 0); adj.set(n.id, []); }
+    for (const e of STATE.edges) {
+        if (!adj.has(e.from) || !adj.has(e.to)) continue;
+        adj.get(e.from).push(e.to);
+        inDeg.set(e.to, (inDeg.get(e.to) || 0) + 1);
+    }
+    const tier = new Map(), q = [];
+    for (const [id, d] of inDeg) if (d === 0) { q.push(id); tier.set(id, 0); }
+    while (q.length) {
+        const u = q.shift();
+        const t = tier.get(u) || 0;
+        for (const v of adj.get(u) || []) {
+            inDeg.set(v, (inDeg.get(v) || 0) - 1);
+            tier.set(v, Math.max(tier.get(v) || 0, t + 1));
+            if (inDeg.get(v) === 0) q.push(v);
+        }
+    }
+    // Nodes not reached (in cycles or disconnected): fall back to type-based tier
+    for (const n of STATE.nodes) {
+        if (!tier.has(n.id)) tier.set(n.id, TYPE_ORDER[n.type] ?? 0);
+    }
+    STATE.tiers = tier;
+}
+
+// Returns the actual throughput of a node: for sources use outFlow, for sinks use inFlow,
+// for intermediates use min(inFlow, outFlow) which is the real flow passing through.
+function nodeFlow(nodeId, nodeType) {
+    if (SOURCE_TYPES.has(nodeType)) return STATE.outFlow.get(nodeId) || 0;
+    if (nodeType === 'retailer') return STATE.inFlow.get(nodeId) || 0;
+    const inf = STATE.inFlow.get(nodeId) || 0;
+    const outf = STATE.outFlow.get(nodeId) || 0;
+    // For intermediate nodes both should be equal in a valid flow; take min to be safe.
+    return Math.min(inf, outf);
+}
+
+// Returns utilisation % (0-100) capped sensibly.
+function nodeUtil(nodeId, nodeType) {
+    const node = STATE.nodes.find(n => n.id === nodeId);
+    if (!node || node.capacity <= 0) return 0;
+    return Math.min(100, Math.round((nodeFlow(nodeId, nodeType) / node.capacity) * 100));
+}
+
+function scoreCol(s, dark) { return s >= 75 ? (dark ? "#10b981" : "#059669") : s >= 45 ? (dark ? "#f59e0b" : "#d97706") : (dark ? "#ef4444" : "#dc2626"); }
+function scoreLabel(s) { return s >= 75 ? "Resilient" : s >= 45 ? "Vulnerable" : "Critical"; }
+function curvePath(a, b) { const dx = b.x - a.x; return `M${a.x},${a.y} C${a.x + dx * 0.5},${a.y} ${b.x - dx * 0.5},${b.y} ${b.x},${b.y}`; }
+
+const $ = id => document.getElementById(id);
+function setHTML(id, html) { const el = $(id); if (el) el.innerHTML = html; }
+
+function getScore() {
+    if (STATE.baselineTotal <= 0) return 0;
+    return Math.max(0, Math.min(100, Math.round((STATE.current.totalFlow / STATE.baselineTotal) * 100)));
+}
+
+let _heavyDebounceTimer = null;
+
+function updateState(lightOnly) {
+    // Don't run expensive full render while user is mid-drag — SVG will update on drop
+    if (window._dragActive) { return; }
+    STATE.current = runMaxFlow(STATE.disrupted);
+
+    STATE.inFlow.clear(); STATE.outFlow.clear();
+    for (const [k, f] of STATE.current.edgeFlowMap) {
+        const [from, to] = k.split("__");
+        STATE.inFlow.set(to, (STATE.inFlow.get(to) || 0) + f);
+        STATE.outFlow.set(from, (STATE.outFlow.get(from) || 0) + f);
+    }
+
+    if (!lightOnly) {
+        // Run heavy analytics immediately for explicit user actions (node click, edge edit, etc.)
+        STATE.aps = tarjanAP(STATE.disrupted);
+        const _analysis = analyzeNetwork(STATE.disrupted, STATE.baselineTotal, STATE.aps);
+        STATE.spofs = _analysis.spofs;
+        STATE.ranking = _analysis.ranking;
+    } else {
+        // Defer heavy analytics so drag/live edits stay smooth; fire after 300ms idle
+        if (_heavyDebounceTimer) clearTimeout(_heavyDebounceTimer);
+        _heavyDebounceTimer = setTimeout(() => {
+            STATE.aps = tarjanAP(STATE.disrupted);
+            const _a = analyzeNetwork(STATE.disrupted, STATE.baselineTotal, STATE.aps);
+            STATE.spofs = _a.spofs;
+            STATE.ranking = _a.ranking;
+            render();
+        }, 300);
+    }
+    render();
+}
+
+function render() {
+    $('networkSvg').setAttribute('height', SVG_HEIGHT);
+    $('networkSvg').setAttribute('viewBox', `0 0 1240 ${SVG_HEIGHT}`);
+
+    renderSVG();
+    renderSidebar();
+    renderChart();
+    renderHeader();
+
+    // Refresh popover if it's open so parameter values stay in sync
+    const popover = $('nodePopover');
+    if (popover && popover.classList.contains('active') && window._activePopoverNodeId) {
+        renderPopoverContent(window._activePopoverNodeId);
+    }
+}
+
+function renderHeader() {
+    $('bodyRoot').className = STATE.dark ? 'dark' : 'light';
+    $('themeToggleBtn').innerHTML = `<span class="icon">${STATE.dark ? '☀️' : '🌙'}</span> <span class="label">${STATE.dark ? 'Light Mode' : 'Dark Mode'}</span>`;
+
+    const score = getScore();
+    const sc = scoreCol(score, STATE.dark);
+
+    $('headerScoreValue').innerText = `${score}%`;
+    $('headerScoreValue').style.color = sc;
+    $('headerScoreLabel').innerText = scoreLabel(score);
+    $('headerScoreLabel').style.color = sc;
+
+    // Legend
+    const leg = Object.entries(TYPE_LABEL).map(([t, l]) => {
+        const c = STATE.dark ? TYPE_META[t].dark : TYPE_META[t].light;
+        return `<div class="legend-item"><div class="legend-dot" style="background:${c}; box-shadow: 0 0 8px ${c}80"></div><div class="legend-text">${l}</div></div>`;
+    }).join('');
+
+    const disC = STATE.dark ? "#ef4444" : "#dc2626";
+    const dis = `<div class="legend-item"><div class="legend-dot" style="border: 2px dashed ${disC}"></div><div class="legend-text">Disrupted</div></div>`;
+    const spof = `<div class="legend-item"><div class="legend-dot" style="border: 2px solid #f59e0b"></div><div class="legend-text" style="color:#f59e0b; font-weight:700">SPOF</div></div>`;
+
+    setHTML('legendContainer', leg + dis + spof);
+}
+
+function renderSVG() {
+    const isDark = STATE.dark;
+    const T = {
+        arrowA: isDark ? "#3b82f6" : "#2563eb",
+        arrowI: isDark ? "#475569" : "#cbd5e1",
+        arrowD: isDark ? "#7f1d1d" : "#fca5a5",
+        gridBorder: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+        gridText: isDark ? "#475569" : "#94a3b8"
+    };
+
+    let defs = `
+    <filter id="drop-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="${isDark ? '#000000' : '#1e293b'}" flood-opacity="${isDark ? '0.7' : '0.3'}"/>
+    </filter>
+    <marker id="arr-a" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L0,10 L12,5 z" fill="${T.arrowA}" /></marker>
+    <marker id="arr-i" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L0,10 L12,5 z" fill="${T.arrowI}" /></marker>
+    <marker id="arr-d" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L0,10 L12,5 z" fill="${T.arrowD}" /></marker>
+  `;
+    STATE.nodes.forEach(n => {
+        const m = TYPE_META[n.type], c = isDark ? m.dark : m.light, bg = isDark ? m.darkBg : m.lightBg, dis = STATE.disrupted.has(n.id);
+        const stop1 = dis ? (isDark ? "#ef4444" : "#fca5a5") : c;
+        const stop2 = dis ? (isDark ? "#7f1d1d" : "#f87171") : c;
+        const stop3 = dis ? (isDark ? "#1a0505" : "#fee2e2") : bg;
+
+        defs += `<radialGradient id="ng-${n.id}" cx="35%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="${dis ? 0.15 : 0.7}" />
+              <stop offset="15%" stop-color="${stop1}" stop-opacity="${dis ? 0.6 : 0.9}" />
+              <stop offset="55%" stop-color="${stop2}" stop-opacity="${dis ? 0.9 : 1}" />
+              <stop offset="100%" stop-color="${stop3}" stop-opacity="1" />
+             </radialGradient>`;
+    });
+    setHTML('svgDefs', defs);
+
+    // Grid
+    const cols = [
+        { x: COL.farm, l: "FARMS" }, { x: COL.proc, l: "PROCESSORS" }, { x: COL.storage, l: "STORAGE" }, { x: COL.wh, l: "WAREHOUSES" },
+        { x: COL.dist, l: "DISTRIBUTORS" }, { x: COL.ret, l: "RETAILERS" }
+    ];
+    let grid = '';
+    cols.forEach(({ x, l }) => {
+        grid += `<rect x="${x - 45}" y="26" width="90" height="${SVG_HEIGHT - 52}" rx="16" fill="transparent" stroke="${T.gridBorder}" stroke-width="1" stroke-dasharray="8 8" />`;
+        grid += `<text x="${x}" y="17" text-anchor="middle" fill="${T.gridText}" font-size="10" font-weight="700" letter-spacing="1.5" font-family="Outfit,sans-serif">${l}</text>`;
+    });
+    setHTML('svgGrid', grid);
+
+    // Edges
+    let edgeStr = '';
+    STATE.edges.forEach(e => {
+        const fp = NODE_POS[e.from], tp = NODE_POS[e.to]; if (!fp || !tp) return;
+        const key = `${e.from}__${e.to}`;
+        const dis = STATE.disrupted.has(e.from) || STATE.disrupted.has(e.to);
+        const flow = STATE.current.edgeFlowMap.get(key) || 0;
+        const active = flow > 0;
+
+        const dx = tp.x - fp.x, dy = tp.y - fp.y, dist = Math.sqrt(dx * dx + dy * dy);
+        const ox = (dx / dist) * (NR + 1), oy = (dy / dist) * (NR + 1);
+        const exFrac = (NR + 9) / dist;
+        const endX = tp.x - dx * exFrac, endY = tp.y - dy * exFrac;
+        const pd = curvePath({ x: fp.x + ox, y: fp.y + oy }, { x: endX, y: endY });
+        const tVal = dy > 20 ? 0.35 : (dy < -20 ? 0.65 : 0.5);
+        const mt = 1 - tVal;
+        const midX = (fp.x + tp.x) / 2;
+        const mx = mt * mt * mt * fp.x + 3 * mt * tVal * midX + tVal * tVal * tVal * tp.x;
+        const wt = tVal * tVal * (3 - 2 * tVal);
+        const my = (1 - wt) * fp.y + wt * tp.y - 10;
+
+        const stroke = dis ? (isDark ? "#7f1d1d80" : "#fca5a580") : active ? (isDark ? "#3b82f6" : "#2563eb") : (isDark ? "#334155" : "#cbd5e1");
+        const sw = active ? Math.max(1.5, Math.min(5, flow / 15)) : 1;
+        const marker = dis ? "url(#arr-d)" : active ? "url(#arr-a)" : "url(#arr-i)";
+        const op = dis ? 0.3 : active ? 1 : 0.4;
+
+        if (active && !dis) edgeStr += `<path d="${pd}" fill="none" stroke="${isDark ? '#3b82f630' : '#2563eb20'}" stroke-width="${sw + 16}" class="edge-hitbox" data-from="${e.from}" data-to="${e.to}" style="cursor:pointer; pointer-events:stroke;"><title>Click to edit flow · Right-click to delete</title></path>`;
+        edgeStr += `<path d="${pd}" fill="none" stroke="${stroke}" stroke-width="${sw}" marker-end="${marker}" opacity="${op}" stroke-linecap="round" style="pointer-events:none;" />`;
+        if (active && !dis) {
+            edgeStr += `<rect x="${mx - 12}" y="${my - 8}" width="24" height="12" rx="4" fill="${isDark ? '#0f172a' : '#ffffff'}" opacity="0.8" style="pointer-events:none;" />`;
+            edgeStr += `<text x="${mx}" y="${my + 1}" text-anchor="middle" fill="${isDark ? '#e0e7ff' : '#1e3a8a'}" font-size="10" font-weight="800" font-family="monospace" style="pointer-events:none;">${flow}</text>`;
+        }
+    });
+    setHTML('svgEdges', edgeStr);
+    // drag line lives in svgDragLayer — untouched by this wipe, no re-attach needed
+
+    // Nodes
+    let nodeStr = '';
+    STATE.nodes.forEach(n => {
+        const pos = NODE_POS[n.id]; if (!pos) return;
+        const isDis = STATE.disrupted.has(n.id), isSPOF = STATE.spofs.has(n.id), isAP = STATE.aps.has(n.id) && !isDis;
+        const isSel = STATE.selected === n.id;
+        const col = isDark ? TYPE_META[n.type].dark : TYPE_META[n.type].light;
+        const r = NR * (isSel ? 1.08 : 1);
+        const strokeC = isDis ? (isDark ? "#ef4444" : "#dc2626") : isSPOF ? "#f59e0b" : isSel ? (isDark ? "#e0e7ff" : "#1e40af") : (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.2)");
+        const sw = isDis ? 3 : isSPOF ? 4 : isSel ? 3 : 2;
+
+        let inner = '';
+        // SVG Glow filter dropshadow simulation
+        if (isSPOF) inner += `<circle r="${r + 14}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4" opacity="0.8" />`;
+        if (isAP && !isSPOF) inner += `<circle r="${r + 8}" fill="none" stroke="${isDark ? '#f59e0b50' : '#d9770650'}" stroke-width="2" stroke-dasharray="4 4" />`;
+        if (isSel && !isDis) inner += `<circle r="${r + 10}" fill="${col}20" />`;
+        if (!isDis && !isSel) inner += `<circle r="${r + 4}" fill="${col}10" />`;
+
+        inner += `<circle r="${r}" fill="url(#ng-${n.id})" stroke="${strokeC}" stroke-width="${sw}" filter="url(#drop-shadow)" />`;
+        if (!isDis) inner += `<circle r="${r * 0.4}" cx="${-r * 0.25}" cy="${-r * 0.25}" fill="#ffffff20" />`;
+
+        if (isDis) {
+            inner += `<line x1="-12" y1="-12" x2="12" y2="12" stroke="${isDark ? '#ef4444' : '#dc2626'}" stroke-width="3" stroke-linecap="round" />`;
+            inner += `<line x1="12" y1="-12" x2="-12" y2="12" stroke="${isDark ? '#ef4444' : '#dc2626'}" stroke-width="3" stroke-linecap="round" />`;
+        }
+
+        inner += `<text text-anchor="middle" fill="${isDis ? (isDark ? '#7f1d1d' : '#fca5a5') : '#ffffff'}" font-size="12" font-weight="800" font-family="Outfit,sans-serif" dy="4">${n.capacity}</text>`;
+        if (isSPOF) inner += `<text y="${-r - 11}" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="900" letter-spacing="1">SPOF</text>`;
+        inner += `<text y="${r + 18}" text-anchor="middle" fill="${isDis ? (isDark ? '#ef444466' : '#dc262666') : (isDark ? '#94a3b8' : '#475569')}" font-size="11" font-weight="${isSel ? '800' : '600'}" font-family="Outfit,sans-serif">${n.label}</text>`;
+
+        nodeStr += `<g transform="translate(${pos.x},${pos.y})" data-id="${n.id}" class="node-wrapper"><g class="node-group">${inner}</g></g>`;
+    });
+    setHTML('svgNodes', nodeStr);
+}
+
+function renderSidebar() {
+    const isDark = STATE.dark;
+    const score = getScore();
+    const sc = scoreCol(score, isDark);
+
+    // Extra derived metrics
+    const activeNodes = STATE.nodes.filter(n => !STATE.disrupted.has(n.id));
+    const totalCap = activeNodes.reduce((s, n) => s + n.capacity, 0);
+    const netEfficiency = totalCap > 0 ? Math.min(100, Math.round((STATE.current.totalFlow / totalCap) * 100)) : 0;
+    // Redundancy: average number of paths each active node participates in (in-degree + out-degree) / 2
+    const edgeDeg = new Map();
+    for (const n of activeNodes) edgeDeg.set(n.id, 0);
+    for (const e of STATE.edges) {
+        if (edgeDeg.has(e.from)) edgeDeg.set(e.from, edgeDeg.get(e.from) + 1);
+        if (edgeDeg.has(e.to)) edgeDeg.set(e.to, edgeDeg.get(e.to) + 1);
+    }
+    const avgDeg = activeNodes.length > 0 ? (Array.from(edgeDeg.values()).reduce((a,b)=>a+b,0) / activeNodes.length).toFixed(1) : 0;
+    const effCol = netEfficiency > 60 ? (isDark?'#10b981':'#059669') : netEfficiency > 30 ? (isDark?'#f59e0b':'#d97706') : (isDark?'#ef4444':'#dc2626');
+
+    let metHtml = `
+    <div class="metric-row"><span class="metric-label">Theoretical Max Flow</span><span class="metric-value" style="color:${isDark ? '#10b981' : '#059669'}">${STATE.baselineTotal} vol</span></div>
+    <div class="metric-row"><span class="metric-label">Active Flow</span><span class="metric-value" style="color:${STATE.current.totalFlow < STATE.baselineTotal ? (isDark ? '#f59e0b' : '#d97706') : (isDark ? '#10b981' : '#059669')}">${STATE.current.totalFlow} vol</span></div>
+    <div class="metric-row"><span class="metric-label">Retention Score</span><span class="metric-value" style="color:${sc}">${score}%</span></div>
+    <div class="metric-row"><span class="metric-label">Network Efficiency</span><span class="metric-value" style="color:${effCol}" title="Active flow ÷ total node capacity">${netEfficiency}%</span></div>
+    <div class="metric-row"><span class="metric-label">Avg Node Connectivity</span><span class="metric-value" style="color:${isDark?'#94a3b8':'#475569'}" title="Average edges per node — higher = more redundancy">${avgDeg} edges</span></div>
+    <div class="metric-row"><span class="metric-label">Disrupted Nodes</span><span class="metric-value" style="color:${STATE.disrupted.size ? (isDark ? '#ef4444' : '#dc2626') : (isDark ? '#475569' : '#94a3b8')}">${STATE.disrupted.size} / ${STATE.nodes.length}</span></div>
+    <div class="metric-row"><span class="metric-label">Articulation Points</span><span class="metric-value" style="color:${isDark ? '#f59e0b' : '#d97706'}">${STATE.aps.size}</span></div>
+    <div class="metric-row"><span class="metric-label">True SPOFs</span><span class="metric-value" style="color:${STATE.spofs.size ? '#ef4444' : (isDark?'#10b981':'#059669')}">${STATE.spofs.size}</span></div>
+  `;
+    setHTML('metricsList', metHtml);
+
+    $('scoreBarFill').style.width = `${score}%`;
+    $('scoreBarFill').style.background = sc;
+    $('scoreBarFill').style.boxShadow = `0 0 10px ${sc}99`;
+
+    let spofHtml = '';
+    if (STATE.spofs.size === 0) {
+        spofHtml = `<div style="background:${isDark ? '#064e3b20' : '#d1fae540'}; border:1px solid ${isDark ? '#059669' : '#34d399'}; border-radius:10px; padding:12px; font-size:13px; color:${isDark ? '#34d399' : '#059669'}; font-weight:700; text-align:center">✓ Redundant Infrastructure</div>`;
+    } else {
+        [...STATE.spofs].forEach(id => {
+            const node = STATE.nodes.find(n => n.id === id);
+            const c = isDark ? TYPE_META[node.type].dark : TYPE_META[node.type].light;
+            spofHtml += `
+        <div class="spof-card" style="background:${isDark ? 'rgba(245, 158, 11, 0.05)' : '#fffbeb'}; border:1px solid ${isDark ? 'rgba(245, 158, 11, 0.3)' : '#fde68a'}" onclick="STATE.selected='${id}'; updateState(); $('selectedNodeContainer').scrollIntoView({behavior:'smooth'})">
+          <div style="width:10px; height:10px; border-radius:50%; background:${c}; box-shadow: 0 0 8px ${c}90; flex-shrink:0;"></div>
+          <div style="flex:1">
+            <div class="spof-card-label">${node.label}</div>
+            <div class="spof-card-desc">Disconnects terminal route entirely</div>
+          </div>
+          <span class="spof-badge">SPOF</span>
+        </div>`;
+        });
+    }
+    setHTML('spofList', spofHtml);
+
+    let selHtml = '';
+    if (STATE.selected) {
+        const selNode = STATE.nodes.find(n => n.id === STATE.selected);
+        const selImpact = STATE.ranking.find(r => r.id === STATE.selected);
+        const isDis = STATE.disrupted.has(selNode.id);
+        const tC = isDark ? TYPE_META[selNode.type].dark : TYPE_META[selNode.type].light;
+        const nf = nodeFlow(selNode.id, selNode.type);
+        const util = nodeUtil(selNode.id, selNode.type);
+
+        let tags = '';
+        if (STATE.spofs.has(selNode.id)) tags += `<span style="font-size:9px; padding:2px 6px; border-radius:12px; background:${isDark ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb'}; color:#f59e0b; font-weight:800; border:1px solid #f59e0b80">SPOF</span>`;
+        if (STATE.aps.has(selNode.id) && !STATE.spofs.has(selNode.id)) tags += `<span style="font-size:9px; padding:2px 6px; border-radius:12px; background:${isDark ? 'rgba(245, 158, 11, 0.05)' : '#fffbeb'}; color:${isDark ? '#f59e0b' : '#d97706'}">AP</span>`;
+        if (isDis) tags += `<span style="font-size:9px; padding:2px 6px; border-radius:12px; background:${isDark ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2'}; color:${isDark ? '#ef4444' : '#dc2626'}; font-weight:700; border: 1px solid #ef444460">Disrupted</span>`;
+
+        selHtml = `
+      <div class="selected-node-details">
+        <div class="section-title">Selected Node Details</div>
+        <div class="selected-node-header">
+          <div style="width:12px; height:12px; border-radius:50%; background:${tC}; box-shadow:0 0 10px ${tC}90"></div>
+          <span style="font-weight:900; font-size:16px">${selNode.label}</span>
+          ${tags}
+        </div>
+        <div class="selected-node-grid">
+          <div class="selected-node-stat"><div class="selected-node-stat-label">Capacity</div><div class="selected-node-stat-val">${selNode.capacity}</div></div>
+          <div class="selected-node-stat"><div class="selected-node-stat-label">Throughput</div><div class="selected-node-stat-val">${nf}</div></div>
+          <div class="selected-node-stat"><div class="selected-node-stat-label">Utilisation</div><div class="selected-node-stat-val" style="color:${util>85?(isDark?'#ef4444':'#dc2626'):util>60?(isDark?'#f59e0b':'#d97706'):(isDark?'#10b981':'#059669')}">${util}%</div></div>
+          <div class="selected-node-stat"><div class="selected-node-stat-label">Topo Tier</div><div class="selected-node-stat-val">T${STATE.tiers.get(selNode.id) ?? '?'}</div></div>
+          ${selImpact ? `<div class="selected-node-stat" style="grid-column:span 2"><div class="selected-node-stat-label">If Disrupted — Flow Loss</div><div class="selected-node-stat-val" style="color:#ef4444">-${selImpact.impactPct}% (${selImpact.flowLoss} vol)</div></div>` : ''}
+        </div>
+        <button class="toggle-node-btn" style="background:${isDis ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#d1fae5') : (isDark ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2')}; color:${isDis ? (isDark ? '#10b981' : '#059669') : (isDark ? '#ef4444' : '#dc2626')}; border: 1px solid ${isDis ? (isDark ? 'rgba(16, 185, 129, 0.3)' : '#34d399') : (isDark ? 'rgba(239, 68, 68, 0.3)' : '#fca5a5')}" onclick="STATE.disrupted.has('${selNode.id}')?STATE.disrupted.delete('${selNode.id}'):STATE.disrupted.add('${selNode.id}'); updateState();">
+          ${isDis ? "✓ Restore Node Integrity" : "✕ Disrupt Infrastructure"}
+        </button>
+      </div>`;
+    }
+    setHTML('selectedNodeContainer', selHtml);
+
+    let rankHtml = '';
+    STATE.ranking.slice(0, 15).forEach((item, idx) => {
+        const off = STATE.disrupted.has(item.id);
+        const bc = item.impactPct > 50 ? (isDark ? "#ef4444" : "#dc2626") : item.impactPct > 25 ? (isDark ? "#f59e0b" : "#d97706") : (isDark ? "#10b981" : "#059669");
+        const nc = isDark ? TYPE_META[item.type].dark : TYPE_META[item.type].light;
+        const rankCol = idx === 0 ? "#f59e0b" : idx === 1 ? (isDark ? "#94a3b8" : "#64748b") : idx === 2 ? (isDark ? "#b45309" : "#d97706") : (isDark ? "#475569" : "#94a3b8");
+
+        let tags = '';
+        if (item.isSPOF && !off) tags += `<span style="font-size:8px; color:#f59e0b; font-weight:900; border:1px solid rgba(245, 158, 11, 0.4); border-radius:4px; padding:1px 4px">SPOF</span>`;
+        if (item.isAP && !item.isSPOF && !off) tags += `<span style="font-size:8px; color:${isDark ? '#f59e0b' : '#d97706'}; border:1px solid rgba(245, 158, 11, 0.3); border-radius:4px; padding:1px 4px">AP</span>`;
+        if (off) tags += `<span style="font-size:9px; color:${isDark ? '#ef4444' : '#dc2626'}; font-weight:700">OFF</span>`;
+
+        const isSel = STATE.selected === item.id;
+        rankHtml += `
+      <div class="rank-item" style="opacity:${off ? 0.4 : 1}; border:${item.isSPOF ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid transparent'}; background:${isSel ? (isDark ? 'rgba(255,255,255,0.05)' : '#eef2ff') : 'transparent'}" onclick="STATE.selected=STATE.selected==='${item.id}'?null:'${item.id}'; updateState();">
+        <span class="rank-no" style="color:${rankCol}">${idx + 1}</span>
+        <div style="width:10px; height:10px; border-radius:50%; background:${nc}; flex-shrink:0;"></div>
+        <span class="rank-label" style="font-weight:${item.isSPOF ? 700 : 500}">${item.label}</span>
+        ${tags}
+        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${item.impactPct}%; background:${bc}; box-shadow: 0 0 5px ${bc}80"></div></div>
+        <span class="rank-impact" style="color:${bc}">-${item.impactPct}%</span>
+      </div>`;
+    });
+    setHTML('rankingList', rankHtml);
+}
+
+function renderChart() {
+    const tId = STATE.chartTab;
+    const isDark = STATE.dark;
+    const TBorder = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)";
+    const TTextFaint = isDark ? "#475569" : "#94a3b8";
+    const TTextMid = isDark ? "#94a3b8" : "#475569";
+
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.className = btn.getAttribute('data-tab') === tId ? 'tab-btn active' : 'tab-btn');
+    const hints = { flow: "Farms = outgoing · Others = incoming · Ghost = capacity", tier: "% = utilisation · solid = flow · outline = capacity", gauge: "Resilience gauge — Critical / Vulnerable / Resilient zones" };
+    setHTML('tabHint', hints[tId]);
+
+    let html = '';
+    if (tId === 'flow') {
+        const nodes = STATE.nodes.filter(n => !STATE.disrupted.has(n.id));
+        const maxCap = Math.max(...nodes.map(n => n.capacity), 1);
+        const BW = 30, GAP = 10, CH = 150, PAD_L = 50, PAD_TOP = 10, PAD_BOT = 60;
+        const W = nodes.length * (BW + GAP) + PAD_L + 20, H = CH + PAD_TOP + PAD_BOT;
+
+        html = `<div style="overflow-x:auto"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block; min-width:100%">
+      <line x1="${PAD_L}" y1="${PAD_TOP}" x2="${PAD_L}" y2="${PAD_TOP + CH}" stroke="${TBorder}" stroke-width="1" />
+      <line x1="${PAD_L}" y1="${PAD_TOP + CH}" x2="${maxCap > 0 ? W - 10 : PAD_L + 1}" y2="${PAD_TOP + CH}" stroke="${TBorder}" stroke-width="1" />`;
+
+        [0, 50, 100, 150, 200, 250].forEach(v => {
+            if (v > maxCap * 1.2) return;
+            const y = PAD_TOP + CH - (v / maxCap) * CH;
+            if (y >= PAD_TOP) {
+                html += `<line x1="${PAD_L - 4}" y1="${y}" x2="${PAD_L}" y2="${y}" stroke="${TBorder}" stroke-width="1" />
+                 <line x1="${PAD_L}" y1="${y}" x2="${W - 10}" y2="${y}" stroke="${isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.05)'}" stroke-width="1" stroke-dasharray="4 4" />
+                 <text x="${PAD_L - 8}" y="${y + 4}" text-anchor="end" fill="${TTextFaint}" font-size="10" font-family="monospace">${v}</text>`;
+            }
+        });
+
+        nodes.forEach((node, i) => {
+            const x = PAD_L + i * (BW + GAP) + GAP / 2;
+            const nf = nodeFlow(node.id, node.type);
+            const capH = (node.capacity / maxCap) * CH, flowH = (nf / maxCap) * CH;
+            const col = isDark ? TYPE_META[node.type].dark : TYPE_META[node.type].light;
+            const capY = PAD_TOP + CH - capH;
+            const flowY = PAD_TOP + CH - flowH;
+            const sl = node.label.replace("Processor ", "P").replace("Warehouse ", "W").replace("Distributor ", "D").replace("Retailer ", "R");
+
+            html += `<rect x="${x}" y="${capY}" width="${BW}" height="${capH}" fill="${col}" opacity="0.1" rx="4" />
+               <rect x="${x}" y="${capY}" width="${BW}" height="${capH}" fill="none" stroke="${col}" stroke-width="1" opacity="0.3" rx="4" />`;
+            if (flowH > 0) {
+                html += `<rect x="${x + 4}" y="${flowY}" width="${BW - 8}" height="${flowH}" fill="${col}" opacity="0.9" rx="3" />
+                 <text x="${x + BW / 2}" y="${flowY - 4}" text-anchor="middle" fill="${col}" font-size="10" font-weight="800" font-family="monospace">${nf}</text>`;
+            }
+            html += `<g transform="translate(${x + BW / 2}, ${PAD_TOP + CH + 14})"><text transform="rotate(-40)" text-anchor="end" fill="${TTextMid}" font-size="11">${sl}</text></g>`;
+            if (SOURCE_TYPES.has(node.type) && flowH > 0) html += `<text x="${x + BW / 2}" y="${PAD_TOP + CH + 46}" text-anchor="middle" fill="${col}" font-size="8" opacity="0.7">out</text>`;
+        });
+
+        html += `<rect x="${PAD_L + 10}" y="${PAD_TOP + 4}" width="12" height="10" fill="${isDark ? '#94a3b8' : '#64748b'}" opacity="0.2" rx="2" />
+             <text x="${PAD_L + 28}" y="${PAD_TOP + 12}" fill="${TTextFaint}" font-size="10">Capacity</text>
+             <rect x="${PAD_L + 80}" y="${PAD_TOP + 4}" width="12" height="10" fill="${isDark ? '#3b82f6' : '#2563eb'}" opacity="0.9" rx="2" />
+             <text x="${PAD_L + 98}" y="${PAD_TOP + 12}" fill="${TTextFaint}" font-size="10">Flow</text>
+             </svg></div>`;
+    } else if (tId === 'tier') {
+        const types = ["farm", "processor", "storage", "warehouse", "distributor", "retailer"];
+        const tcols = isDark ? ["#10b981", "#3b82f6", "#06b6d4", "#f59e0b", "#8b5cf6", "#ef4444"] : ["#059669", "#2563eb", "#0891b2", "#d97706", "#7c3aed", "#dc2626"];
+        const data = types.map((t, i) => {
+            const ns = STATE.nodes.filter(n => n.type === t && !STATE.disrupted.has(n.id));
+            const cap = ns.reduce((s, n) => s + n.capacity, 0);
+            const flow = ns.reduce((s, n) => s + nodeFlow(n.id, n.type), 0);
+            return { name: ["Farms", "Procs", "Storage", "W.houses", "Distrib.", "Retailers"][i], cap, flow, col: tcols[i], util: cap > 0 ? Math.round((flow / cap) * 100) : 0 };
+        });
+        const maxV = Math.max(...data.map(d => d.cap), 1);
+        const BW = 60, GAP = 30, CH = 150, PAD_L = 50, PAD_TOP = 20, PAD_BOT = 40;
+        const W = data.length * (BW + GAP) + PAD_L + 20, H = CH + PAD_TOP + PAD_BOT;
+
+        html = `<svg width="100%" viewBox="0 0 ${W} ${H}" style="display:block">
+      <line x1="${PAD_L}" y1="${PAD_TOP}" x2="${PAD_L}" y2="${PAD_TOP + CH}" stroke="${TBorder}" stroke-width="1" />
+      <line x1="${PAD_L}" y1="${PAD_TOP + CH}" x2="${W - 10}" y2="${PAD_TOP + CH}" stroke="${TBorder}" stroke-width="1" />`;
+
+        [0, 200, 400, 600, 800, 1000].forEach(v => {
+            if (v > maxV * 1.2) return;
+            const y = PAD_TOP + CH - (v / maxV) * CH;
+            if (y >= PAD_TOP) {
+                html += `<line x1="${PAD_L - 4}" y1="${y}" x2="${W - 10}" y2="${y}" stroke="${isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.05)'}" stroke-width="1" stroke-dasharray="4 4" />
+                 <text x="${PAD_L - 8}" y="${y + 4}" text-anchor="end" fill="${TTextFaint}" font-size="10" font-family="monospace">${v}</text>`;
+            }
+        });
+
+        data.forEach((d, i) => {
+            const x = PAD_L + i * (BW + GAP) + GAP / 2, capH = (d.cap / maxV) * CH, flowH = (d.flow / maxV) * CH;
+            html += `<rect x="${x}" y="${PAD_TOP + CH - capH}" width="${BW}" height="${capH}" fill="${d.col}" opacity="0.1" rx="6" />
+               <rect x="${x}" y="${PAD_TOP + CH - capH}" width="${BW}" height="${capH}" fill="none" stroke="${d.col}" stroke-width="1.5" opacity="0.3" rx="6" />`;
+            if (flowH > 0) {
+                html += `<rect x="${x + 6}" y="${PAD_TOP + CH - flowH}" width="${BW - 12}" height="${flowH}" fill="${d.col}" opacity="0.9" rx="4" />`;
+            }
+            html += `<text x="${x + BW / 2}" y="${PAD_TOP + CH - capH - 6}" text-anchor="middle" fill="${d.col}" font-size="12" font-weight="900" font-family="monospace">${d.util}%</text>
+               <text x="${x + BW / 2}" y="${PAD_TOP + CH + 18}" text-anchor="middle" fill="${TTextMid}" font-size="12" font-weight="700">${d.name}</text>
+               <text x="${x + BW / 2}" y="${PAD_TOP + CH + 32}" text-anchor="middle" fill="${TTextFaint}" font-size="10" font-family="monospace">${d.flow}/${d.cap}</text>`;
+        });
+        html += `</svg>`;
+    } else if (tId === 'gauge') {
+        const score = getScore();
+        const CX = 200, CY = 160, R = 120, SW = 24;
+        const pct = Math.max(0, Math.min(100, score)) / 100;
+        const angle = Math.PI + pct * Math.PI;
+        const needleX = CX + (R - 6) * Math.cos(angle), needleY = CY + (R - 6) * Math.sin(angle);
+        const arc = (from, to, r) => `M ${CX + r * Math.cos(from)} ${CY + r * Math.sin(from)} A ${r} ${r} 0 0 1 ${CX + r * Math.cos(to)} ${CY + r * Math.sin(to)}`;
+        const sc = scoreCol(score, isDark);
+        const critEnd = Math.PI + 0.45 * Math.PI, vulnEnd = Math.PI + 0.75 * Math.PI;
+
+        html = `<svg viewBox="0 0 400 230" style="display:block; width:100%; max-width:480px; margin: 0 auto">
+      <path d="${arc(Math.PI, 2 * Math.PI, R)}" fill="none" stroke="${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}" stroke-width="${SW}" stroke-linecap="round" />
+      <path d="${arc(Math.PI, critEnd, R)}" fill="none" stroke="${isDark ? '#ef4444' : '#ef4444'}" stroke-width="${SW}" opacity="0.6" />
+      <path d="${arc(critEnd, vulnEnd, R)}" fill="none" stroke="${isDark ? '#f59e0b' : '#f59e0b'}" stroke-width="${SW}" opacity="0.6" />
+      <path d="${arc(vulnEnd, 2 * Math.PI, R)}" fill="none" stroke="${isDark ? '#10b981' : '#10b981'}" stroke-width="${SW}" opacity="0.6" />
+      <path d="${arc(Math.PI, angle, R)}" fill="none" stroke="${sc}" stroke-width="${SW}" stroke-linecap="round" />
+      <path d="${arc(Math.PI, angle, R)}" fill="none" stroke="${sc}" stroke-width="${SW + 14}" stroke-linecap="round" opacity="0.15" />`;
+
+        [0, 25, 45, 75, 100].forEach(p => {
+            const a = Math.PI + (p / 100) * Math.PI;
+            const x1 = CX + (R - SW / 2 - 4) * Math.cos(a), y1 = CY + (R - SW / 2 - 4) * Math.sin(a);
+            const x2 = CX + (R + SW / 2 + 4) * Math.cos(a), y2 = CY + (R + SW / 2 + 4) * Math.sin(a);
+            const tx = CX + (R + SW / 2 + 18) * Math.cos(a), ty = CY + (R + SW / 2 + 18) * Math.sin(a);
+            html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${isDark ? '#475569' : '#94a3b8'}" stroke-width="2" />
+               <text x="${tx}" y="${ty + 4}" text-anchor="middle" fill="${TTextMid}" font-size="11" font-weight="700" font-family="monospace">${p}</text>`;
+        });
+
+        html += `<text x="${CX - R - 14}" y="${CY + 30}" fill="${isDark ? '#ef4444' : '#dc2626'}" font-size="13" font-weight="800">Critical</text>
+             <text x="${CX - 28}" y="${CY + R + 30}" fill="${isDark ? '#f59e0b' : '#d97706'}" font-size="13" font-weight="800" text-anchor="middle">Vulnerable</text>
+             <text x="${CX + R + 14}" y="${CY + 30}" fill="${isDark ? '#10b981' : '#059669'}" font-size="13" font-weight="800" text-anchor="end">Resilient</text>
+             <line x1="${CX}" y1="${CY}" x2="${needleX}" y2="${needleY}" stroke="${isDark ? '#f8fafc' : '#0f172a'}" stroke-width="4" stroke-linecap="round" />
+             <circle cx="${CX}" cy="${CY}" r="14" fill="${sc}" />
+             <circle cx="${CX}" cy="${CY}" r="6" fill="${isDark ? '#030712' : '#ffffff'}" />
+             <text x="${CX}" y="${CY - 38}" text-anchor="middle" fill="${sc}" font-size="48" font-weight="900">${score}%</text>
+             <text x="${CX}" y="${CY - 12}" text-anchor="middle" fill="${sc}" font-size="16" font-weight="800" letter-spacing="1px" text-transform="uppercase">${scoreLabel(score)}</text>
+             </svg>`;
+    }
+    setHTML('tabContent', html);
+}
+
+// ─── Events & Initialization ──────────────────────────────────────────────────
+
+function attachStaticEvents() {
+    $('themeToggleBtn').onclick = () => { STATE.dark = !STATE.dark; render(); };
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.onclick = () => { STATE.chartTab = btn.getAttribute('data-tab'); renderChart(); };
+    });
+    $('btnGenerate').onclick = () => { generateNetwork(); };
+
+    if ($('btnAddNode')) {
+        $('btnAddNode').onclick = () => {
+            if (typeof window.addNode === 'function') window.addNode();
+        };
+    }
+    
+    if ($('btnPdf')) {
+        $('btnPdf').onclick = () => {
+            // Build a self-contained SVG snapshot of the current graph + a metrics table
+            const svgEl = document.getElementById('networkSvg');
+            const svgClone = svgEl.cloneNode(true);
+            // Remove the drag layer from the clone
+            const dl = svgClone.querySelector('#svgDragLayer');
+            if (dl) dl.innerHTML = '';
+
+            // Gather metrics
+            const metricRows = Array.from(document.querySelectorAll('#metricsList .metric-row')).map(row => {
+                const label = row.querySelector('.metric-label')?.innerText || '';
+                const val   = row.querySelector('.metric-value')?.innerText   || '';
+                const color = row.querySelector('.metric-value')?.style.color  || '#0f172a';
+                return `<tr><td style="padding:6px 12px;font-size:13px;color:#475569;">${label}</td><td style="padding:6px 12px;font-size:13px;font-weight:800;color:${color};font-family:monospace;">${val}</td></tr>`;
+            }).join('');
+
+            // Score
+            const score = document.getElementById('headerScoreValue')?.innerText || '';
+            const scoreLabel = document.getElementById('headerScoreLabel')?.innerText || '';
+            const scoreColor = document.getElementById('headerScoreValue')?.style.color || '#10b981';
+
+            const svgWidth  = svgEl.getAttribute('width')  || 1240;
+            const svgHeight = svgEl.getAttribute('height') || 500;
+            const svgViewBox = svgEl.getAttribute('viewBox') || `0 0 ${svgWidth} ${svgHeight}`;
+
+            // Inline the SVG markup
+            const svgSerializer = new XMLSerializer();
+            const svgContent = svgSerializer.serializeToString(svgClone);
+
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Supply Chain Resilience Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Outfit', system-ui, sans-serif; background: #f8fafc; color: #0f172a; padding: 32px; }
+  h1 { font-size: 28px; font-weight: 900; background: linear-gradient(90deg,#2563eb,#7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 24px; font-weight: 600; }
+  .score-banner { display: flex; align-items: center; gap: 16px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .score-value { font-size: 42px; font-weight: 900; color: ${scoreColor}; line-height: 1; }
+  .score-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: ${scoreColor}; }
+  .score-desc { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 12px; }
+  .graph-box { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; overflow: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .graph-box svg { display: block; max-width: 100%; height: auto; }
+  .metrics-box { background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  table { width: 100%; border-collapse: collapse; }
+  tr:nth-child(even) { background: #f8fafc; }
+  tr { border-bottom: 1px solid #f1f5f9; }
+  .footer { margin-top: 24px; font-size: 11px; color: #cbd5e1; text-align: center; }
+  @media print { body { padding: 16px; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
+</style>
+</head>
+<body>
+  <h1>Resilience Graph Explorer</h1>
+  <p class="subtitle">Food &amp; Agriculture Network · Supply Chain Report</p>
+
+  <div class="score-banner">
+    <div>
+      <div class="score-value">${score}</div>
+      <div class="score-label">${scoreLabel}</div>
+    </div>
+    <div>
+      <div class="score-desc">Overall network resilience score based on max-flow retention under disruption.</div>
+      <div class="score-desc" style="margin-top:4px;">${STATE.nodes.length} nodes · ${STATE.edges.length} edges · ${STATE.disrupted.size} disrupted</div>
+    </div>
+  </div>
+
+  <div class="section-title">Network Graph</div>
+  <div class="graph-box">
+    ${svgContent}
+  </div>
+
+  <div class="section-title">Network Metrics</div>
+  <div class="metrics-box">
+    <table><tbody>${metricRows}</tbody></table>
+  </div>
+
+  <div class="footer">Generated by Resilience Graph Explorer · ${new Date().toLocaleString()}</div>
+</body>
+</html>`;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = 'supply_chain_report.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+    }
+
+    if ($('btnExport')) {
+        $('btnExport').onclick = () => {
+            const data = {
+                nodes: STATE.nodes.map(n => ({
+                    id: n.id,
+                    label: n.label,
+                    type: n.type,
+                    capacity: n.capacity,
+                    x: NODE_POS[n.id]?.x,
+                    y: NODE_POS[n.id]?.y
+                })),
+                edges: STATE.edges.map(e => ({
+                    from: e.from,
+                    to: e.to,
+                    flow: e.flow
+                }))
+            };
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "supply_chain_network.json";
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+    }
+
+    if ($('inpJson')) {
+        $('inpJson').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    // Use a slightly more lenient parsing if strict JSON fails
+                    let rawContent = ev.target.result.trim();
+                    let data;
+                    try {
+                        data = JSON.parse(rawContent);
+                    } catch (parseErr) {
+                        // Attempt to parse single-quoted or JS-object-like JSON
+                        console.warn("Strict JSON parse failed, trying relaxed parsing...");
+                        data = new Function("return " + rawContent)();
+                    }
+                    
+                    loadNetworkFromJson(data);
+                } catch (err) {
+                    console.error("Invalid JSON content:", err);
+                    alert("Invalid JSON file: " + err.message);
+                } finally {
+                    // Reset input so the same file can be uploaded again
+                    e.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    let activePopoverNodeId = null;
+    const popover = $('nodePopover');
+
+    const showPopover = (id, x, y) => {
+        activePopoverNodeId = id;
+        window._activePopoverNodeId = id;
+        renderPopoverContent(id);
+        const gc = $('graphContainer');
+        const gcW = gc.offsetWidth, gcH = gc.offsetHeight;
+        let px = x + 20, py = y - 20;
+        if (px + 280 > gcW) px = x - 300;
+        if (py + 300 > gcH) py = gcH - 310;
+        if (py < 0) py = 8;
+        popover.style.left = `${px}px`;
+        popover.style.top = `${py}px`;
+        popover.classList.add('active');
+        popover.classList.remove('hidden');
+    };
+
+    window.hidePopover = () => {
+        popover.classList.remove('active');
+        setTimeout(() => { if (!popover.classList.contains('active')) popover.classList.add('hidden'); }, 200);
+        activePopoverNodeId = null;
+        window._activePopoverNodeId = null;
+    };
+
+    // Close popover when clicking outside
+    document.addEventListener('mousedown', (e) => {
+        if (activePopoverNodeId && !popover.contains(e.target) && !e.target.closest('.node-wrapper')) {
+            window.hidePopover();
+        }
+    });
+
+    // ── Click: single click toggles disruption ──────────────────────────────
+    // We store the node id on mousedown (before any re-render can wipe the target)
+    // so both click and dblclick always know which node was hit.
+    let nodeClickTimer = null;
+    let _pendingClickId = null;
+
+    $('networkSvg').addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        const wrapper = e.target.closest('.node-wrapper');
+        _pendingClickId = wrapper ? wrapper.getAttribute('data-id') : null;
+    }, true); // capture phase so we always get it first
+
+    $('networkSvg').addEventListener('click', (e) => {
+        if (justBuilt) return;
+        const id = _pendingClickId;
+        _pendingClickId = null;
+        if (!id) return;
+
+        if (nodeClickTimer) { clearTimeout(nodeClickTimer); nodeClickTimer = null; }
+
+        nodeClickTimer = setTimeout(() => {
+            nodeClickTimer = null;
+            if (STATE.disrupted.has(id)) STATE.disrupted.delete(id);
+            else STATE.disrupted.add(id);
+            STATE.selected = id;
+            updateState();
+        }, 250);
+    });
+
+    // ── Double click: open popover ────────────────────────────────────────────
+    $('networkSvg').addEventListener('dblclick', (e) => {
+        if (justBuilt) return;
+        // Re-read from event target directly — _pendingClickId was already consumed by the first click
+        const wrapper = e.target.closest('.node-wrapper');
+        const id = wrapper ? wrapper.getAttribute('data-id') : null;
+        if (!id) return;
+
+        // Cancel the single-click timer that fired on the first click of this dblclick
+        if (nodeClickTimer) { clearTimeout(nodeClickTimer); nodeClickTimer = null; }
+
+        const containerRect = $('graphContainer').getBoundingClientRect();
+        const px = e.clientX - containerRect.left;
+        const py = e.clientY - containerRect.top;
+        if (activePopoverNodeId === id) { window.hidePopover(); }
+        else { showPopover(id, px, py); }
+    });
+
+    let buildEdge = { active: false, fromId: null, x: 0, y: 0, isDragging: false };
+    let justBuilt = false;
+    let nodeClickCount = 0, nodeClickId = null; // guard refs used in mousemove
+
+    // Show a tooltip hint while hovering a node (for drag-to-connect UX)
+    let hoverHintEl = null;
+    $('svgNodes').addEventListener('mouseover', (e) => {
+        const wrapper = e.target.closest('.node-wrapper');
+        if (!wrapper) return;
+        if (!hoverHintEl) {
+            hoverHintEl = document.createElement('div');
+            hoverHintEl.style.cssText = 'position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#94a3b8;font-size:11px;padding:4px 10px;border-radius:20px;pointer-events:none;z-index:500;white-space:nowrap;font-family:Outfit,sans-serif;';
+            $('graphContainer').appendChild(hoverHintEl);
+        }
+        hoverHintEl.textContent = 'Drag → connect  |  Double-click → edit  |  Single-click → toggle disruption';
+        hoverHintEl.style.opacity = '1';
+    });
+    $('svgNodes').addEventListener('mouseout', (e) => {
+        if (hoverHintEl) hoverHintEl.style.opacity = '0';
+    });
+
+    $('networkSvg').addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return; // only left button starts drag
+        const wrapper = e.target.closest('.node-wrapper');
+        if (wrapper && !buildEdge.active) {
+            buildEdge.active = true;
+            buildEdge.isDragging = false;
+            buildEdge.fromId = wrapper.getAttribute('data-id');
+            const pt = getSVGPoint(e);
+            buildEdge.startX = pt.x; buildEdge.startY = pt.y;
+            buildEdge.x = pt.x;
+            buildEdge.y = pt.y;
+            _ctmCache = null; // invalidate CTM cache at drag start
+        }
+    });
+
+    let dragRafId = null;
+    $('networkSvg').addEventListener('mousemove', (e) => {
+        if (!buildEdge.active) return;
+        if (dragRafId) return; // skip if a frame is already queued
+        dragRafId = requestAnimationFrame(() => {
+            dragRafId = null;
+            const pt = getSVGPoint(e);
+            const dx = pt.x - buildEdge.startX, dy = pt.y - buildEdge.startY;
+            if (!buildEdge.isDragging && Math.sqrt(dx*dx+dy*dy) > 10) {
+                buildEdge.isDragging = true;
+                window._dragActive = true;
+                // Only NOW kill the dbl-click counter — user is genuinely dragging
+                nodeClickCount = 0; nodeClickId = null;
+            }
+            if (buildEdge.isDragging) {
+                buildEdge.x = pt.x; buildEdge.y = pt.y;
+                renderDragEdge();
+            }
+        });
+    });
+
+    // Use document-level mouseup so it fires even if the SVG DOM gets re-rendered mid-drag
+    document.addEventListener('mouseup', (e) => {
+        if (!buildEdge.active) return;
+        // Cancel any queued rAF for drag
+        if (dragRafId) { cancelAnimationFrame(dragRafId); dragRafId = null; }
+        window._dragActive = false;
+        if (buildEdge.isDragging) {
+            justBuilt = true; setTimeout(() => justBuilt = false, 300);
+            // Use elementFromPoint instead of e.target (target can be stale after re-render)
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const wrapper = el ? el.closest('.node-wrapper') : null;
+            let connected = false;
+            if (wrapper) {
+                const toId = wrapper.getAttribute('data-id');
+                if (toId && toId !== buildEdge.fromId) {
+                    const existing = STATE.edges.find(x => x.from === buildEdge.fromId && x.to === toId);
+                    const defFlow = existing ? existing.flow : 50;
+                    updateEdgeFlow(buildEdge.fromId, toId, defFlow);
+                    connected = true;
+                }
+            }
+            // If we didn't connect to anything, still re-render to clear the drag line visually
+            if (!connected) { updateState(); }
+        }
+        // Note: plain clicks (non-drag) are handled by the click/dblclick listeners above.
+        // Do NOT call updateState() here — it would fire before the click event and cause double-toggling.
+        buildEdge.active = false;
+        buildEdge.isDragging = false;
+        // Clear drag layer
+        const dragLayer = document.getElementById('svgDragLayer');
+        if (dragLayer) dragLayer.innerHTML = '';
+    });
+
+    // Right-click on an edge hitbox to delete it
+    $('networkSvg').addEventListener('contextmenu', (e) => {
+        const hitbox = e.target.closest('.edge-hitbox');
+        if (hitbox) {
+            e.preventDefault();
+            const fromId = hitbox.getAttribute('data-from');
+            const toId = hitbox.getAttribute('data-to');
+            // Confirm with a small inline badge, then delete after 600ms or immediately
+            updateEdgeFlow(fromId, toId, 0);
+        }
+    });
+
+    // Left-click on edge hitbox: prompt to edit flow inline
+    $('networkSvg').addEventListener('click', (e) => {
+        if (justBuilt) return;
+        if (e.target.closest('.node-wrapper')) return; // handled by unified node handler above
+        const hitbox = e.target.closest('.edge-hitbox');
+        if (hitbox) {
+            const fromId = hitbox.getAttribute('data-from');
+            const toId = hitbox.getAttribute('data-to');
+            const edge = STATE.edges.find(x => x.from === fromId && x.to === toId);
+            if (!edge) return;
+            showEdgeEditor(fromId, toId, edge.flow, e);
+        }
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && buildEdge.active) {
+            buildEdge.active = false;
+            const temp = document.getElementById('tempDragEdge');
+            if (temp) temp.remove();
+        }
+    });
+
+    let _ctmCache = null, _ctmFrame = -1;
+    function getSVGPoint(e) {
+        const svg = document.getElementById('networkSvg');
+        // Re-compute CTM only once per animation frame (cache invalidated by scroll/resize)
+        const now = performance.now();
+        if (!_ctmCache || now - _ctmFrame > 100) {
+            _ctmCache = svg.getScreenCTM().inverse();
+            _ctmFrame = now;
+        }
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        return pt.matrixTransform(_ctmCache);
+    }
+
+    function renderDragEdge() {
+        // Always use the dedicated drag layer — it is NEVER wiped by renderSVG
+        const layer = document.getElementById('svgDragLayer');
+        let temp = document.getElementById('tempDragEdge');
+        if (!temp) {
+            temp = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            temp.setAttribute("id", "tempDragEdge");
+            temp.setAttribute("fill", "none");
+            temp.setAttribute("stroke", STATE.dark ? "#3b82f6" : "#2563eb");
+            temp.setAttribute("stroke-width", "2.5");
+            temp.setAttribute("stroke-dasharray", "10 5");
+            temp.setAttribute("pointer-events", "none");
+            layer.appendChild(temp);
+        } else if (temp.parentNode !== layer) {
+            layer.appendChild(temp); // re-parent if somehow displaced
+        }
+
+        const fp = NODE_POS[buildEdge.fromId];
+        if (!fp) return;
+
+        // Draw line from node edge to cursor
+        const dx = buildEdge.x - fp.x, dy = buildEdge.y - fp.y;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        const startX = fp.x + (dx / dist) * (NR + 2);
+        const startY = fp.y + (dy / dist) * (NR + 2);
+        const pd = curvePath({ x: startX, y: startY }, { x: buildEdge.x, y: buildEdge.y });
+        temp.setAttribute("d", pd);
+    }
+}
+
+function renderPopoverContent(id) {
+    const popover = $('nodePopover');
+    if (!popover) return;
+    const node = STATE.nodes.find(n => n.id === id);
+    if (!node) return;
+
+    const incomingEdges = STATE.edges.filter(e => e.to === id);
+    const outgoingEdges = STATE.edges.filter(e => e.from === id);
+    const isDark = STATE.dark;
+
+    // Actual computed flows from max-flow result
+    const actualInFlow  = STATE.inFlow.get(id)  || 0;
+    const actualOutFlow = STATE.outFlow.get(id) || 0;
+    const util = nodeUtil(id, node.type);
+    const utilCol = util > 85 ? '#ef4444' : util > 60 ? '#f59e0b' : '#10b981';
+
+    let html = `<div class="popover-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>${node.label}</span>
+        <span style="font-size:11px;color:${utilCol};font-weight:800">${util}% util</span>
+    </div>`;
+
+    // Capacity (editable) + actual throughput (now editable)
+    html += `
+    <div class="popover-section">
+        <div class="popover-label">Node Capacity (editable)</div>
+        <div class="popover-input-row">
+            <input type="number" value="${node.capacity}" onchange="updateNodeCapacity('${id}', this.value)" style="flex:1" />
+            <span style="font-size:10px;opacity:0.5;white-space:nowrap">max cap</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;font-size:11px;">
+            <div style="flex:1;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:6px;padding:5px 8px;">
+                <div style="color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">Actual In-Flow</div>
+                <input type="number" min="0" value="${actualInFlow}" onchange="redistributeFlow('${id}', 'in', this.value)" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(16,185,129,0.4);color:#10b981;font-weight:800;font-size:14px;font-family:Outfit,sans-serif;outline:none;padding:0;" />
+            </div>
+            <div style="flex:1;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:5px 8px;">
+                <div style="color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">Actual Out-Flow</div>
+                <input type="number" min="0" value="${actualOutFlow}" onchange="redistributeFlow('${id}', 'out', this.value)" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(59,130,246,0.4);color:#3b82f6;font-weight:800;font-size:14px;font-family:Outfit,sans-serif;outline:none;padding:0;" />
+            </div>
+        </div>
+        <div style="color:#475569;font-size:9px;margin-top:4px;text-align:center;">Edits redistribute flow across connected edges proportionally</div>
+    </div>`;
+
+    if (incomingEdges.length > 0) {
+        const totalEdgeCap = incomingEdges.reduce((s, e) => s + e.flow, 0);
+        html += `
+        <div class="popover-section">
+            <div class="popover-label" style="display:flex;justify-content:space-between;">
+                <span>Incoming Links</span>
+                <span style="font-size:9px;color:#475569;">actual&nbsp;<span style="color:#10b981">✎</span>&nbsp;/&nbsp;cap&nbsp;<span style="color:#94a3b8">✎</span></span>
+            </div>
+            <div style="max-height: 120px; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 4px;">`;
+        incomingEdges.forEach(edge => {
+            const sourceNode = STATE.nodes.find(n => n.id === edge.from);
+            if (!sourceNode) return;
+            const actualEdgeFlow = STATE.current.edgeFlowMap.get(`${edge.from}__${id}`) || 0;
+            const pct = edge.flow > 0 ? Math.min(100, Math.round((actualEdgeFlow / edge.flow) * 100)) : 0;
+            const pc = pct > 85 ? '#ef4444' : pct > 60 ? '#f59e0b' : '#10b981';
+            html += `
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:0;">
+                <span title="${sourceNode.label}" style="width:80px;font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${sourceNode.label}</span>
+                <input type="number" min="0" placeholder="0" value="${actualEdgeFlow}"
+                    title="Actual flow on this link"
+                    onchange="setEdgeActualFlow('${sourceNode.id}', '${id}', this.value)"
+                    style="width:46px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.25);color:${pc};border-radius:4px;padding:3px 5px;font-family:Outfit,sans-serif;font-size:12px;font-weight:800;outline:none;flex-shrink:0;" />
+                <span style="font-size:10px;color:#475569;flex-shrink:0;">/</span>
+                <input type="number" min="1" placeholder="0" value="${edge.flow}"
+                    title="Max capacity on this link"
+                    onchange="updateEdgeFlow('${sourceNode.id}', '${id}', this.value)"
+                    style="width:46px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:inherit;border-radius:4px;padding:3px 5px;font-family:Outfit,sans-serif;font-size:12px;font-weight:600;outline:none;flex-shrink:0;" />
+            </div>`;
+        });
+        html += `</div></div>`;
+    }
+
+    if (outgoingEdges.length > 0) {
+        html += `
+        <div class="popover-section">
+            <div class="popover-label" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>Outgoing Links</span>
+                <span style="font-size:9px;color:#475569;">actual&nbsp;<span style="color:#10b981">✎</span>&nbsp;/&nbsp;cap&nbsp;<span style="color:#94a3b8">✎</span></span>
+            </div>
+            <div style="max-height: 120px; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 4px;">`;
+        outgoingEdges.forEach(edge => {
+            const targetNode = STATE.nodes.find(n => n.id === edge.to);
+            if (!targetNode) return;
+            const actualEdgeFlow = STATE.current.edgeFlowMap.get(`${id}__${edge.to}`) || 0;
+            const pct = edge.flow > 0 ? Math.min(100, Math.round((actualEdgeFlow / edge.flow) * 100)) : 0;
+            const pc = pct > 85 ? '#ef4444' : pct > 60 ? '#f59e0b' : '#10b981';
+            html += `
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:0;">
+                <span title="${targetNode.label}" style="width:80px;font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${targetNode.label}</span>
+                <input type="number" min="0" placeholder="0" value="${actualEdgeFlow}"
+                    title="Actual flow on this link"
+                    onchange="setEdgeActualFlow('${id}', '${targetNode.id}', this.value)"
+                    style="width:46px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.25);color:${pc};border-radius:4px;padding:3px 5px;font-family:Outfit,sans-serif;font-size:12px;font-weight:800;outline:none;flex-shrink:0;" />
+                <span style="font-size:10px;color:#475569;flex-shrink:0;">/</span>
+                <input type="number" min="1" placeholder="0" value="${edge.flow}"
+                    title="Max capacity on this link"
+                    onchange="updateEdgeFlow('${id}', '${targetNode.id}', this.value)"
+                    style="width:46px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:inherit;border-radius:4px;padding:3px 5px;font-family:Outfit,sans-serif;font-size:12px;font-weight:600;outline:none;flex-shrink:0;" />
+            </div>`;
+        });
+        html += `</div></div>`;
+    }
+
+    html += `
+    <div style="margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+        <button onclick="removeNode('${id}')" style="width: 100%; padding: 6px; background: rgba(239, 68, 68, 0.12); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 4px; cursor: pointer; font-family: Outfit, sans-serif; font-weight: 600; font-size: 12px; transition: all 0.2s;">
+            Delete Node
+        </button>
+    </div>`;
+
+    popover.innerHTML = html;
+}
+
+window.removeNode = function(id) {
+    STATE.nodes = STATE.nodes.filter(n => n.id !== id);
+    STATE.edges = STATE.edges.filter(e => e.from !== id && e.to !== id);
+    STATE.disrupted.delete(id);
+    if (STATE.selected === id) STATE.selected = null;
+    delete NODE_POS[id];
+    
+    if (window.hidePopover) window.hidePopover();
+    const old = document.getElementById('edgeEditorPopup');
+    if (old) old.remove();
+    
+    const base = runMaxFlow(new Set());
+    STATE.baselineTotal = base.totalFlow;
+    kahnTiers();
+    updateState();
+};
+
+window.updateNodeCapacity = function(id, val) {
+    const v = Number(val);
+    if (isNaN(v)) return;
+    const n = STATE.nodes.find(x => x.id === id);
+    if (n) { 
+        n.capacity = v; 
+        const base = runMaxFlow(new Set());
+        STATE.baselineTotal = base.totalFlow;
+        updateState(); 
+    }
+};
+
+window.updateEdgeFlow = function(from, to, val) {
+    const v = Number(val);
+    let eIdx = STATE.edges.findIndex(x => x.from === from && x.to === to);
+    
+    if (isNaN(v) || v <= 0 || val === '') {
+        if (eIdx !== -1) STATE.edges.splice(eIdx, 1);
+    } else {
+        if (eIdx !== -1) STATE.edges[eIdx].flow = v;
+        else STATE.edges.push({from, to, flow: v});
+    }
+    
+    const base = runMaxFlow(new Set());
+    STATE.baselineTotal = base.totalFlow;
+    kahnTiers();
+    updateState();
+};
+
+// redistributeFlow: when the user edits Actual In-Flow or Out-Flow,
+// scale the connected edge capacities proportionally so the new total matches.
+window.redistributeFlow = function(nodeId, direction, val) {
+    const newTotal = Math.max(0, Number(val));
+    if (isNaN(newTotal)) return;
+
+    const edges = direction === 'in'
+        ? STATE.edges.filter(e => e.to === nodeId)
+        : STATE.edges.filter(e => e.from === nodeId);
+
+    if (edges.length === 0) return;
+
+    const currentTotal = edges.reduce((s, e) => s + e.flow, 0);
+
+    if (currentTotal === 0 || newTotal === 0) {
+        // Distribute evenly if no existing basis
+        const share = newTotal === 0 ? 1 : Math.max(1, Math.round(newTotal / edges.length));
+        edges.forEach(e => { e.flow = share; });
+    } else {
+        // Scale proportionally, ensure each edge gets at least 1
+        edges.forEach(e => {
+            e.flow = Math.max(1, Math.round((e.flow / currentTotal) * newTotal));
+        });
+    }
+
+    const base = runMaxFlow(new Set());
+    STATE.baselineTotal = base.totalFlow;
+    kahnTiers();
+    updateState();
+};
+
+// setEdgeActualFlow: user directly edits the green "actual" number on a specific edge.
+// We set that edge's capacity to the requested value so the flow algorithm can route it.
+window.setEdgeActualFlow = function(from, to, val) {
+    const v = Math.max(1, Math.round(Number(val)));
+    if (isNaN(v)) return;
+
+    // Set this edge's capacity to the new value so the max-flow can push that much through
+    let edge = STATE.edges.find(e => e.from === from && e.to === to);
+    if (!edge) {
+        edge = { from, to, flow: v };
+        STATE.edges.push(edge);
+    } else {
+        edge.flow = v;
+    }
+
+    const base = runMaxFlow(new Set());
+    STATE.baselineTotal = base.totalFlow;
+    kahnTiers();
+    updateState();
+};
+
+window.addNode = function() {
+    const type = document.getElementById('selNodeType').value;
+    const count = STATE.nodes.filter(n => n.type === type).length + 1;
+    const id = `${type}${count}_${Math.random().toString(36).substr(2, 5)}`;
+    
+    let labelBase = "Farm";
+    if (type === 'processor') labelBase = "Processor";
+    else if (type === 'storage') labelBase = "Storage";
+    else if (type === 'warehouse') labelBase = "Warehouse";
+    else if (type === 'distributor') labelBase = "Distributor";
+    else if (type === 'retailer') labelBase = "Retailer";
+    const label = `${labelBase} ${count}`;
+    
+    let cap = 100;
+    if (type === 'farm') cap = 100;
+    else if (type === 'processor') cap = 150;
+    else if (type === 'storage') cap = 200;
+    else if (type === 'warehouse') cap = 200;
+    else if (type === 'distributor') cap = 150;
+    else if (type === 'retailer') cap = 75;
+    
+    STATE.nodes.push({ id, label, type, capacity: cap });
+    
+    const existingNodes = STATE.nodes.filter(n => n.type === type);
+    const startY = 100;
+    const Y_GAP = 130;
+    let colX = COL.farm;
+    if (type === 'processor') colX = COL.proc;
+    else if (type === 'storage') colX = COL.storage;
+    else if (type === 'warehouse') colX = COL.wh;
+    else if (type === 'distributor') colX = COL.dist;
+    else if (type === 'retailer') colX = COL.ret;
+    
+    let maxY = startY - Y_GAP;
+    existingNodes.forEach(n => {
+        if (n.id !== id && NODE_POS[n.id] && NODE_POS[n.id].y > maxY) {
+            maxY = NODE_POS[n.id].y;
+        }
+    });
+    
+    NODE_POS[id] = { x: colX, y: maxY + Y_GAP };
+    SVG_HEIGHT = Math.max(SVG_HEIGHT, maxY + Y_GAP + 100);
+    
+    const base = runMaxFlow(new Set());
+    STATE.baselineTotal = base.totalFlow;
+    kahnTiers();
+    updateState();
+};
+
+// ─── Edge Inline Editor ───────────────────────────────────────────────────────
+
+function showEdgeEditor(fromId, toId, currentFlow, mouseEvent) {
+    const old = document.getElementById('edgeEditorPopup');
+    if (old) old.remove();
+    const fromNode = STATE.nodes.find(n => n.id === fromId);
+    const toNode = STATE.nodes.find(n => n.id === toId);
+    if (!fromNode || !toNode) return;
+    const gc = $('graphContainer');
+    const gcRect = gc.getBoundingClientRect();
+    let px = mouseEvent.clientX - gcRect.left + 12;
+    let py = mouseEvent.clientY - gcRect.top - 30;
+    if (px + 240 > gc.offsetWidth) px -= 260;
+    if (py < 0) py = 8;
+    const isDark = STATE.dark;
+    const el = document.createElement('div');
+    el.id = 'edgeEditorPopup';
+    el.style.cssText = `position:absolute;left:${px}px;top:${py}px;z-index:2000;background:${isDark?'rgba(15,23,42,0.97)':'rgba(255,255,255,0.97)'};border:1px solid ${isDark?'rgba(99,102,241,0.4)':'rgba(99,102,241,0.3)'};border-radius:12px;padding:14px 16px;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.4);font-family:Outfit,sans-serif;color:${isDark?'#f8fafc':'#0f172a'};`;
+    el.innerHTML = `<div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="opacity:0.5;font-size:10px;letter-spacing:1px">EDGE</span><span style="color:#3b82f6">${fromNode.label}</span><span style="opacity:0.4">→</span><span style="color:#8b5cf6">${toNode.label}</span></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><label style="font-size:12px;opacity:0.7;flex-shrink:0;">Flow</label><input id="edgeFlowInput" type="number" min="1" value="${currentFlow}" style="flex:1;background:${isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)'};border:1px solid ${isDark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.15)'};color:inherit;border-radius:6px;padding:5px 8px;font-family:Outfit,sans-serif;font-size:14px;font-weight:700;outline:none;width:80px;"/></div><div style="display:flex;gap:8px;"><button id="edgeSaveBtn" style="flex:1;padding:6px;background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.4);border-radius:6px;cursor:pointer;font-family:Outfit,sans-serif;font-weight:700;font-size:12px;">Apply</button><button id="edgeDeleteBtn" style="flex:1;padding:6px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:6px;cursor:pointer;font-family:Outfit,sans-serif;font-weight:700;font-size:12px;">Delete Link</button></div>`;
+    gc.appendChild(el);
+    const input = document.getElementById('edgeFlowInput');
+    input.focus(); input.select();
+    document.getElementById('edgeSaveBtn').onclick = () => { const v = parseInt(input.value); if (!isNaN(v) && v > 0) updateEdgeFlow(fromId, toId, v); el.remove(); };
+    document.getElementById('edgeDeleteBtn').onclick = () => { updateEdgeFlow(fromId, toId, 0); el.remove(); };
+    input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') document.getElementById('edgeSaveBtn').click(); if (ev.key === 'Escape') el.remove(); });
+    setTimeout(() => { const h = (ev) => { if (!el.contains(ev.target)) { el.remove(); document.removeEventListener('mousedown', h); } }; document.addEventListener('mousedown', h); }, 10);
+}
+
+function init() {
+    attachStaticEvents();
+    generateNetwork();
+}
+
+init();    </script>
+</body>
+</html>
